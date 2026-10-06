@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horários da escola</title>
+<style>
+  :root{
+    --ink:#1E3B2C;
+    --bus:#CFE8D5;
+    --sky:#EEF5EF;
+    --card:#FFFFFF;
+    --line:#C9DECE;
+    --mute:#53705E;
+    --now:#2F8F5B;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--sky);
+    color:var(--ink);
+    font-family:"Avenir Next","Segoe UI",Roboto,system-ui,sans-serif;
+    line-height:1.4;
+  }
+  button{font:inherit;color:inherit;cursor:pointer}
+  button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+
+  header{
+    background:var(--bus);
+    border-bottom:6px solid var(--ink);
+    padding:22px 18px 18px;
+  }
+  header h1{margin:0;font-size:1.7rem;font-weight:800;letter-spacing:-.02em}
+  header p{margin:4px 0 0;font-weight:600}
+
+  main{max-width:640px;margin:0 auto;padding:18px}
+
+  .grade{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .turma{
+    text-align:left;
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:14px;
+    padding:14px;
+    min-height:104px;
+    display:flex;flex-direction:column;justify-content:space-between;gap:8px;
+  }
+  .turma strong{font-size:1.2rem;font-weight:800}
+  .turma span{font-size:.88rem;color:var(--mute)}
+  .turma.ativa span{color:var(--now);font-weight:700}
+
+  .voltar{
+    background:none;border:0;padding:6px 0;margin-bottom:8px;
+    font-weight:700;text-decoration:underline;
+  }
+  h2{margin:0 0 14px;font-size:2rem;font-weight:800;letter-spacing:-.02em}
+
+  .dias{display:flex;gap:6px;margin-bottom:16px}
+  .dias button{
+    flex:1;padding:10px 0;
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:10px;
+    font-weight:700;
+  }
+  .dias button[aria-pressed="true"]{background:var(--ink);color:#fff}
+
+  .aulas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .aula{
+    display:grid;grid-template-columns:88px 1fr auto;align-items:center;gap:12px;
+    background:var(--card);
+    border:2px solid var(--line);
+    border-radius:14px;
+    padding:12px 14px;
+  }
+  .aula time{font-weight:800;font-size:1.05rem;line-height:1.15}
+  .aula time small{display:block;font-weight:600;color:var(--mute);font-size:.8rem}
+  .aula .materia{font-size:1.1rem;font-weight:700;line-height:1.25}
+  .aula .prof{display:block;font-size:.85rem;font-weight:600;color:var(--mute)}
+  .aula.intervalo,.aula.livre{background:transparent;border-style:dashed}
+  .aula.intervalo .materia,.aula.livre .materia{color:var(--mute);font-weight:600}
+  .aula.agora{border-color:var(--now);background:#E1F3E7}
+  .selo{
+    background:var(--now);color:#fff;
+    font-size:.78rem;font-weight:800;
+    padding:3px 9px;border-radius:99px;
+  }
+  .vazio{background:var(--card);border:2px dashed var(--line);border-radius:14px;padding:20px;text-align:center;color:var(--mute)}
+
+
+  .alerta{background:#FDECEA;border:2px solid #C62828;color:#8E1B1B;border-radius:14px;padding:12px 14px;font-weight:700;margin-bottom:14px}
+  .aula.livro{border-color:#C62828;background:#FFF5F4}
+  .aula.livro.agora{background:#FFF5F4}
+  .lado{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+  .selo.vermelho{background:#C62828}
+  .ponto{display:inline-block;width:8px;height:8px;border-radius:50%;background:#C62828;margin-left:6px;vertical-align:middle}
+  .dias button[aria-pressed="true"] .ponto{background:#FF8A80}
+  .turma span.livro-aviso{color:#C62828;font-weight:800}
+  .turma.ativa{border-color:var(--now)}
+  .topo{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .fixar{background:var(--card);border:2px solid var(--ink);border-radius:99px;padding:6px 12px;font-weight:700;font-size:.85rem}
+  .fixar[aria-pressed="true"]{background:var(--ink);color:#fff}
+  .dica{margin:0 0 12px;color:var(--mute);font-size:.9rem;font-weight:600}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Horários da escola</h1>
+  <p id="sub"></p>
+</header>
+<main id="app"></main>
+
+<script>
+/* =====================================================================
+   EDITE AQUI
+   ===================================================================== */
+
+const NOME_DA_ESCOLA = "CETI Raimundo Pessoa";
+
+// Horário de cada aula. Preencha ini e fim (ex.: "07:30") para aparecer o
+// horário na tela e o aviso "Agora". Se deixar vazio, aparece só "1ª aula", "2ª aula"...
+// Para marcar um intervalo, coloque uma linha com intervalo:true entre as aulas.
+const PERIODOS = [
+  { ini: "", fim: "" },  // 1ª aula
+  { ini: "", fim: "" },  // 2ª aula
+  { ini: "", fim: "" },  // 3ª aula
+  { ini: "", fim: "" },  // 4ª aula
+  { ini: "", fim: "" },  // 5ª aula
+  { ini: "", fim: "" },  // 6ª aula
+  { ini: "", fim: "" },  // 7ª aula
+  { ini: "", fim: "" }   // 8ª aula
+];
+
+// Cada aula é ["Matéria", "Professor"]. "null" = horário vago.
+const TURMAS = {
+  "1º ano A": {
+    seg: [["Modelagem de Banco de Dados", "Julimar"], ["Modelagem de Banco de Dados", "Julimar"], ["Recomposição", "Levi"], ["Inteligência Artificial", "Matheus"], ["Física", "João Paulo"], ["Física", "João Paulo"], ["Filosofia", "Milagres"], ["Mentorias Tec I", "Julimar"]],
+    ter: [["Biologia", "Daniela"], ["Biologia", "Daniela"], ["Português", "Izilda"], ["Português", "Izilda"], ["Espanhol e Percurso", "Wáldima"], ["Inglês", "Andressa"], ["História", "Leo"], ["História", "Leo"]],
+    qua: [["Química", "Gilson"], ["Química", "Gilson"], ["Robótica", "Irismar"], ["Robótica", "Irismar"], ["Sociologia", "Milagres"], ["Matemática", "Jairy"], ["Leitura e Produção Textual", "Izilda"], ["Curso", ""]],
+    qui: [["Geografia", "Lanuzia"], ["Geografia", "Lanuzia"], ["Arquitetura de Computadores e Infraestrutura de TI", "Julimar"], ["Arquitetura de Computadores e Infraestrutura de TI", "Julimar"], ["Matemática", "Jairy"], ["Matemática", "Jairy"], ["Artes", "Milagres"], ["Curso", ""]],
+    sex: [["Educação Financeira / Empreendedorismo", "Júlio"], ["Educação Física", "Karine"], ["Recomposição", "Izilda"], ["Curso", ""], ["Educação Financeira", "Gilson"], ["Aprofundamento / Inglês", "Andressa"], ["Métodos Ágeis", "Julimar"], ["Métodos Ágeis", "Julimar"]],
+  },
+  "1º ano B": {
+    seg: [["Recomposição", "Levi"], ["Educação Física", "Karine"], ["História", "Leo"], ["História", "Leo"], ["Artes", "Milagres"], ["Modelagem de Banco de Dados", "Julimar"], ["Modelagem de Banco de Dados", "Julimar"], ["Filosofia", "Milagres"]],
+    ter: [["Espanhol e Percurso", "Wáldima"], ["Curso", ""], ["Curso", ""], ["Leitura e Produção Textual", ""], ["Inglês", "Andressa"], ["Biologia", "Samara"], ["Curso", ""], ["Curso", ""]],
+    qua: [["Robótica", "Irismar"], ["Robótica", "Irismar"], ["Educação Financeira", "Gilson"], ["Matemática", "Jairy"], ["Curso", ""], ["Recomposição", "Izilda"], ["Física", "João Paulo"], ["Física", "João Paulo"]],
+    qui: [["Arquitetura de Computadores e Infraestrutura de TI", "Julimar"], ["Arquitetura de Computadores e Infraestrutura de TI", "Julimar"], ["Geografia", "Lanuzia"], ["Geografia", "Lanuzia"], ["Mentorias Tec I", "Julimar"], ["Sociologia", "Milagres"], ["Matemática", "Jairy"], ["Matemática", "Jairy"]],
+    sex: [["Português", "Izilda"], ["Português", "Izilda"], ["Educação Financeira / Empreendedorismo", "Júlio"], ["Inteligência Artificial", "Matheus"], ["Aprofundamento / Inglês", "Andressa"], ["Biologia", "Samara"], ["Química", "Gilson"], ["Química", "Gilson"]],
+  },
+  "2º ano A": {
+    seg: [["Educação Física", "Karine"], ["Sociologia", "Milagres"], ["Matemática", "Jairy"], ["Matemática", "Jairy"], ["História", "Leo"], ["Filosofia", "Milagres"], ["Física", "João Paulo"], ["Física", "João Paulo"]],
+    ter: [["Robótica", "Irismar"], ["Robótica", "Irismar"], ["Percurso / Horário de estudo", ""], ["Espanhol e Percurso", "Wáldima"], ["Português", "Izilda"], ["Português", "Izilda"], ["Aprofundamento / Inglês", "Andressa"], ["Aprofundamento / Inglês", "Andressa"]],
+    qua: [["Curso", "Cândido"], ["Curso", "Cândido"], ["Curso", "Cândido"], ["Química", "Gilson"], ["Matemática", "Jairy"], ["Artes", "Milagres"], ["Educação Financeira / Empreendedorismo", "Júlio"], ["Inteligência Artificial", "Matheus"]],
+    qui: [["Curso", "Cândido"], ["Curso", "Cândido"], ["Curso", "Cândido"], ["Percurso / Horário de estudo", ""], ["Geografia", "Lanuzia"], ["Educação Financeira / Empreendedorismo", "Julimar"], ["Percurso / Horário de estudo", ""], ["Recomposição", "Levi"]],
+    sex: [["Curso", "Cândido"], ["Curso", "Cândido"], ["Curso", "Cândido"], ["Curso", "Cândido"], ["Leitura e Produção Textual", "Izilda"], ["Química", "Gilson"], ["Biologia", "Samara"], ["Biologia", "Samara"]],
+  },
+  "2º ano B": {
+    seg: [["Matemática", "Jairy"], ["Matemática", "Jairy"], ["Sociologia", "Milagres"], ["Inteligência Artificial", "Julimar"], ["Curso", "Matheus"], ["Curso", "Matheus"], ["Curso", "Matheus"], ["Curso", "Matheus"]],
+    ter: [["Português", "Izilda"], ["Português", "Izilda"], ["Robótica", "Irismar"], ["Robótica", "Irismar"], ["História", "Leo"], ["Espanhol e Percurso", "Wáldima"], ["Biologia", "Samara"], ["Biologia", "Samara"]],
+    qua: [["Física", "João Paulo"], ["Física", "João Paulo"], ["Matemática", "Jairy"], null, ["Leitura e Produção Textual", "Izilda"], ["Curso", "Matheus"], ["Curso", "Matheus"], ["Filosofia", "Milagres"]],
+    qui: [["Química", "Gilson"], ["Química", "Gilson"], ["Aprofundamento / Inglês", "Andressa"], ["Inglês", "Andressa"], ["Recomposição / Percurso", ""], ["Recomposição / Percurso", ""], ["Recomposição", "Levi"], ["Artes", "Milagres"]],
+    sex: [["Educação Física", "Karine"], ["Geografia", "Lanuzia"], ["Educação Financeira / Empreendedorismo", "Julimar"], ["Educação Financeira / Empreendedorismo", "Julimar"], ["Curso", "Matheus"], ["Curso", "Matheus"], ["Curso", "Matheus"], ["Curso", "Matheus"]],
+  },
+  "3º ano A": {
+    seg: [["Sociologia", "Milagres"], ["Recomposição", "Levi"], ["Educação Física", "Karine"], ["Filosofia", "Milagres"], ["Matemática", "Jairy"], ["Curso", "Marcos Rogério"], ["Curso", "Marcos Rogério"], ["Curso", "Marcos Rogério"]],
+    ter: [["Educação para o Trânsito", "Ant. Car"], ["Educação para o Trânsito", "Ant. Car"], ["Espanhol e Percurso", "Wáldima"], ["Física", "João Paulo"], ["Biologia", "Daniela"], ["História", "Leo"], ["Percurso / Horário de estudo", ""], ["Percurso / Horário de estudo", ""]],
+    qua: [["Matemática", "Jairy"], ["Matemática", "Jairy"], ["Português", "Izilda"], ["Português", "Izilda"], ["Física", "João Paulo"], ["Física", "João Paulo"], ["Atividade Integradora de Artes", "Milagres"], ["Recomposição / Percurso", ""]],
+    qui: [["Inglês", "Andressa"], ["Inglês", "Andressa"], ["Química", "Gilson"], ["Química", "Gilson"], ["Artes", "Milagres"], ["Curso", "Marcos Rogério"], ["Curso", "Marcos Rogério"], ["Curso", "Marcos Rogério"]],
+    sex: [["Geografia", "Lanuzia"], ["Educação Financeira / Empreendedorismo", "Júlio"], ["Atividades Integradoras – Esportes / Ed. Física", "Karine"], ["Português", "Izilda"], ["Curso", "Marcos Rogério"], ["Curso", "Marcos Rogério"], ["Curso", "Marcos Rogério"], ["Curso", "Marcos Rogério"]],
+  },
+};
+
+/* =====================================================================
+   Daqui para baixo é o funcionamento do app. Não precisa mexer.
+   ===================================================================== */
+
+const DIAS = [["seg","Seg"],["ter","Ter"],["qua","Qua"],["qui","Qui"],["sex","Sex"]];
+const CHAVE_DIA = ["dom","seg","ter","qua","qui","sex","sab"];
+const NOME_DIA = {seg:"segunda",ter:"terça",qua:"quarta",qui:"quinta",sex:"sexta"};
+const TEM_HORARIO = PERIODOS.some(p => p.ini && p.fim);
+
+const app = document.getElementById("app");
+document.getElementById("sub").textContent = NOME_DA_ESCOLA;
+
+let diaEscolhido = null;
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const minutos = hhmm => { const [h,m] = hhmm.split(":").map(Number); return h*60+m; };
+
+function agora(){
+  const d = new Date();
+  return { dia: CHAVE_DIA[d.getDay()], min: d.getHours()*60 + d.getMinutes() };
+}
+
+function aulasDoDia(turma, dia){
+  const lista = (TURMAS[turma] || {})[dia];
+  if(!lista) return [];
+  let i = 0, n = 0;
+  return PERIODOS.map(p => {
+    if(p.intervalo) return { ini:p.ini, fim:p.fim, intervalo:true, materia:"Intervalo", prof:"", n:0 };
+    const item = lista[i++];
+    n++;
+    return { ini:p.ini, fim:p.fim, intervalo:false, n,
+             materia: item ? item[0] : "Vago", prof: item ? item[1] : "", livre: !item };
+  });
+}
+
+function estaAgora(a, t){
+  return !!(a.ini && a.fim) && minutos(a.ini) <= t.min && t.min < minutos(a.fim);
+}
+
+function aulaAgora(turma){
+  const t = agora();
+  return aulasDoDia(turma, t.dia).find(a => estaAgora(a, t)) || null;
+}
+
+// Professores cujas aulas exigem o livro (pode trocar ou acrescentar nomes)
+const LIVRO_PROFESSORES = ["Leo", "Jairy"];
+
+const precisaLivro = a => !a.intervalo && LIVRO_PROFESSORES.includes(a.prof);
+
+function livrosDoDia(turma, dia){
+  const nomes = aulasDoDia(turma, dia).filter(precisaLivro).map(a => a.materia);
+  return [...new Set(nomes)];
+}
+const juntar = lista => lista.length < 2 ? lista.join("") : lista.slice(0,-1).join(", ") + " e " + lista[lista.length-1];
+
+const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch(e) {} };
+const ler = k => { try { return localStorage.getItem(k); } catch(e) { return null; } };
+const apagar = k => { try { localStorage.removeItem(k); } catch(e) {} };
+
+let diaHome = null;
+
+function diaInicial(){
+  const t = agora();
+  return NOME_DIA[t.dia] ? t.dia : "seg";
+}
+
+function abasDia(selecionado, livroPorDia){
+  return DIAS.map(([k, rotulo]) =>
+    `<button data-dia="${k}" aria-pressed="${k === selecionado}">${rotulo}${livroPorDia(k) ? '<i class="ponto" title="Tem aula que precisa de livro"></i>' : ""}</button>`
+  ).join("");
+}
+
+function telaInicial(){
+  if(!diaHome) diaHome = diaInicial();
+  const t = agora();
+  const fixada = ler("turma");
+
+  const cartoes = Object.keys(TURMAS).map(nome => {
+    const a = (TEM_HORARIO && diaHome === t.dia) ? aulaAgora(nome) : null;
+    let status = "Toque para ver os horários";
+    if(a) status = a.intervalo ? "Agora: intervalo" : "Agora: " + a.materia;
+    const livros = livrosDoDia(nome, diaHome);
+    const aviso = livros.length
+      ? `<span class="livro-aviso">📖 Leve o livro: ${esc(juntar(livros))}</span>`
+      : `<span>Sem livro neste dia</span>`;
+    return `<button class="turma ${a ? "ativa" : ""}" data-turma="${esc(nome)}">
+      <strong>${esc(nome)}${fixada === nome ? " ★" : ""}</strong>
+      <span>${esc(status)}</span>
+      ${aviso}
+    </button>`;
+  }).join("");
+
+  const algumLivro = Object.keys(TURMAS).some(n => livrosDoDia(n, diaHome).length);
+  app.innerHTML = `
+    <p class="dica">Escolha o dia e veja quais turmas precisam levar o livro.</p>
+    <div class="dias" role="group" aria-label="Dia da semana">${abasDia(diaHome, k => Object.keys(TURMAS).some(n => livrosDoDia(n, k).length))}</div>
+    <div class="grade">${cartoes}</div>`;
+
+  app.querySelectorAll("[data-turma]").forEach(b =>
+    b.addEventListener("click", () => { diaEscolhido = diaHome; location.hash = encodeURIComponent(b.dataset.turma); })
+  );
+  app.querySelectorAll("[data-dia]").forEach(b =>
+    b.addEventListener("click", () => { diaHome = b.dataset.dia; desenhar(); })
+  );
+}
+
+function telaTurma(nome){
+  const t = agora();
+  if(!diaEscolhido) diaEscolhido = diaInicial();
+
+  const aulas = aulasDoDia(nome, diaEscolhido);
+  const hoje = diaEscolhido === t.dia;
+  const livros = livrosDoDia(nome, diaEscolhido);
+  const fixada = ler("turma") === nome;
+
+  const alerta = livros.length
+    ? `<div class="alerta" role="alert">📖 Neste dia, leve o livro de ${esc(juntar(livros))}.</div>` : "";
+
+  const lista = aulas.length ? aulas.map(a => {
+    const agoraNessa = hoje && estaAgora(a, t);
+    const livro = precisaLivro(a);
+    const hora = (a.ini && a.fim)
+      ? `${a.ini}<small>até ${a.fim}</small>`
+      : (a.intervalo ? "Intervalo" : `${a.n}ª aula`);
+    const selos = (livro ? '<span class="selo vermelho">Leve o livro</span>' : "")
+                + (agoraNessa ? '<span class="selo">Agora</span>' : "");
+    return `<li class="aula ${a.intervalo ? "intervalo" : ""} ${a.livre ? "livre" : ""} ${agoraNessa ? "agora" : ""} ${livro ? "livro" : ""}">
+      <time>${hora}</time>
+      <span class="materia">${esc(a.materia)}${a.prof ? `<span class="prof">${esc(a.prof)}</span>` : ""}</span>
+      <span class="lado">${selos}</span>
+    </li>`;
+  }).join("") : `<div class="vazio">Nenhum horário cadastrado para este dia.</div>`;
+
+  app.innerHTML = `
+    <div class="topo">
+      <button class="voltar" id="voltar">← Turmas</button>
+      <button class="fixar" id="fixar" aria-pressed="${fixada}">${fixada ? "★ Minha turma" : "☆ Fixar turma"}</button>
+    </div>
+    <h2>${esc(nome)}</h2>
+    <div class="dias" role="group" aria-label="Dia da semana">${abasDia(diaEscolhido, k => livrosDoDia(nome, k).length)}</div>
+    ${alerta}
+    <ul class="aulas">${lista}</ul>`;
+
+  document.getElementById("voltar").addEventListener("click", () => { diaHome = diaEscolhido; location.hash = ""; });
+  document.getElementById("fixar").addEventListener("click", () => {
+    if(fixada) apagar("turma"); else guardar("turma", nome);
+    desenhar();
+  });
+  app.querySelectorAll("[data-dia]").forEach(b =>
+    b.addEventListener("click", () => { diaEscolhido = b.dataset.dia; desenhar(); })
+  );
+}
+
+function desenhar(){
+  const nome = decodeURIComponent(location.hash.slice(1));
+  if(nome && TURMAS[nome]) telaTurma(nome); else telaInicial();
+}
+
+window.addEventListener("hashchange", () => { desenhar(); window.scrollTo(0,0); });
+setInterval(desenhar, 60000);
+const fixadaAoAbrir = ler("turma");
+if(!location.hash && fixadaAoAbrir && TURMAS[fixadaAoAbrir]) location.hash = encodeURIComponent(fixadaAoAbrir);
+desenhar();
+</script>
+</body>
+</html>
