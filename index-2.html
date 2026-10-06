@@ -83,7 +83,7 @@
   .selo{
     background:var(--now);color:#fff;
     font-size:.78rem;font-weight:800;
-    padding:3px 9px;border-radius:99px;
+    padding:3px 9px;border-radius:99px;white-space:nowrap;
   }
   .vazio{background:var(--card);border:2px dashed var(--line);border-radius:14px;padding:20px;text-align:center;color:var(--mute)}
 
@@ -118,18 +118,21 @@
 
 const NOME_DA_ESCOLA = "CETI Raimundo Pessoa";
 
-// Horário de cada aula. Preencha ini e fim (ex.: "07:30") para aparecer o
-// horário na tela e o aviso "Agora". Se deixar vazio, aparece só "1ª aula", "2ª aula"...
-// Para marcar um intervalo, coloque uma linha com intervalo:true entre as aulas.
+// Horário de cada aula (50 minutos cada, com 10 minutos de troca entre elas).
+// Linhas com intervalo:true são os intervalos (nome aparece na tela).
+// Para mudar um horário, é só trocar os números entre aspas.
 const PERIODOS = [
-  { ini: "", fim: "" },  // 1ª aula
-  { ini: "", fim: "" },  // 2ª aula
-  { ini: "", fim: "" },  // 3ª aula
-  { ini: "", fim: "" },  // 4ª aula
-  { ini: "", fim: "" },  // 5ª aula
-  { ini: "", fim: "" },  // 6ª aula
-  { ini: "", fim: "" },  // 7ª aula
-  { ini: "", fim: "" }   // 8ª aula
+  { ini: "07:30", fim: "08:20" },                                   // 1ª aula
+  { ini: "08:30", fim: "09:20" },                                   // 2ª aula
+  { ini: "09:30", fim: "09:50", intervalo: true, nome: "Intervalo" },
+  { ini: "09:50", fim: "10:40" },                                   // 3ª aula
+  { ini: "10:50", fim: "11:40" },                                   // 4ª aula
+  { ini: "11:50", fim: "12:50", intervalo: true, nome: "Almoço" },
+  { ini: "12:50", fim: "13:40" },                                   // 5ª aula
+  { ini: "13:50", fim: "14:40" },                                   // 6ª aula
+  { ini: "14:50", fim: "15:10", intervalo: true, nome: "Lanche" },
+  { ini: "15:10", fim: "16:00" },                                   // 7ª aula
+  { ini: "16:10", fim: "17:00" }                                    // 8ª aula (saída às 17:10)
 ];
 
 // Cada aula é ["Matéria", "Professor"]. "null" = horário vago.
@@ -198,7 +201,7 @@ function aulasDoDia(turma, dia){
   if(!lista) return [];
   let i = 0, n = 0;
   return PERIODOS.map(p => {
-    if(p.intervalo) return { ini:p.ini, fim:p.fim, intervalo:true, materia:"Intervalo", prof:"", n:0 };
+    if(p.intervalo) return { ini:p.ini, fim:p.fim, intervalo:true, materia:p.nome || "Intervalo", prof:"", n:0 };
     const item = lista[i++];
     n++;
     return { ini:p.ini, fim:p.fim, intervalo:false, n,
@@ -251,7 +254,8 @@ function telaInicial(){
   const cartoes = Object.keys(TURMAS).map(nome => {
     const a = (TEM_HORARIO && diaHome === t.dia) ? aulaAgora(nome) : null;
     let status = "Toque para ver os horários";
-    if(a) status = a.intervalo ? "Agora: intervalo" : "Agora: " + a.materia;
+    if(a) status = "Agora: " + a.materia;
+    else if(TEM_HORARIO && diaHome === t.dia) status = "Sem aula agora";
     const livros = livrosDoDia(nome, diaHome);
     const aviso = livros.length
       ? `<span class="livro-aviso">📖 Leve o livro: ${esc(juntar(livros))}</span>`
@@ -336,4 +340,4 @@ if(!location.hash && fixadaAoAbrir && TURMAS[fixadaAoAbrir]) location.hash = enc
 desenhar();
 </script>
 </body>
-</html>
+  </html>
