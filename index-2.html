@@ -89,6 +89,12 @@
   .cal .pag{border-color:var(--now);background:var(--agora)}
   .cal .hoje{outline:2px dashed var(--ink);outline-offset:1px}
   .cal .esc{background:var(--ink);color:var(--on);border-color:var(--ink)}
+  .aviso{border-top:1px solid var(--line);padding:10px 0}
+  .aviso:first-of-type{border-top:0;padding-top:4px}
+  .aviso strong{display:block}
+  .aviso p{margin:4px 0;white-space:pre-wrap}
+  .aviso small{color:var(--mute);font-weight:600}
+  textarea.campo{resize:vertical}
   .legenda{font-size:.85rem;color:var(--mute);font-weight:600;margin:0 0 14px}
 </style>
 </head>
@@ -115,10 +121,10 @@
 // me pedir para liberar.
 const ESCOLAS = { ceti: "CETI Raimundo Pessoa" };
 
-// Senha do professor (guardada embaralhada, em SHA-256).
-// Senha temporária atual: professor2026
-// Para trocar, me mande a senha nova que eu te devolvo a linha pronta.
-const SENHA_PROFESSOR_HASH = "9576141106e1a2d2e67f8fc384336472cdad8ba9356e907cdd5329c13653f9d8";
+// Conexão com o Supabase (guarda os avisos e confere as senhas dos professores).
+// Estes dois dados são públicos, podem ficar no site. NUNCA coloque aqui a service_role.
+const SUPABASE_URL = "https://gjkoxlzizuqbjwritblv.supabase.co";
+const SUPABASE_KEY = "sb_publishable_DGcOezGPXOBjdxteQ0Di7A_ofFQiCOl";
 
 // Datas do Pé-de-Meia (calendário oficial do MEC para 2026).
 // data = dia do pagamento (ou início da janela); fim = último dia da janela, se for uma janela.
@@ -240,9 +246,37 @@ const diasAte = s => Math.round((parseData(s) - hoje0()) / 86400000);
 function perfilAtual(){
   try { return JSON.parse(ler("perfil") || "null"); } catch(e) { return null; }
 }
-async function hashSenha(texto){
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto));
-  return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, "0")).join("");
+/* ---------- conexão com o servidor ---------- */
+async function api(caminho, opcoes){
+  const r = await fetch(SUPABASE_URL + "/rest/v1/" + caminho, Object.assign({}, opcoes, {
+    headers: { "apikey": SUPABASE_KEY, "Content-Type": "application/json" }
+  }));
+  const texto = await r.text();
+  let dados = null;
+  try { dados = texto ? JSON.parse(texto) : null; } catch(e) {}
+  if(!r.ok) throw new Error((dados && dados.message) || "Erro de conexão");
+  return dados;
+}
+const chamar = (fn, args) => api("rpc/" + fn, { method: "POST", body: JSON.stringify(args) });
+function buscarAvisos(sala){
+  const desde = new Date(Date.now() - 14*86400000).toISOString();
+  return api("avisos?select=id,professor,titulo,texto,criado_em&sala=eq." + encodeURIComponent(sala)
+    + "&criado_em=gte." + encodeURIComponent(desde) + "&order=criado_em.desc&limit=10");
+}
+function avisosHtml(lista){
+  if(!lista || !lista.length) return "";
+  const itens = lista.map(a => {
+    const d = new Date(a.criado_em);
+    const quando = `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    return `<div class="aviso"><strong>${esc(a.titulo)}</strong><p>${esc(a.texto)}</p><small>Prof. ${esc(a.professor)} · ${quando}</small></div>`;
+  }).join("");
+  return `<section class="cfg"><h3>📣 Avisos</h3>${itens}</section>`;
+}
+function carregarAvisos(sala){
+  buscarAvisos(sala).then(l => {
+    const el = document.getElementById("avisos");
+    if(el) el.innerHTML = avisosHtml(l);
+  }).catch(() => {});
 }
  
 /* ---------- tema ---------- */
@@ -350,9 +384,12 @@ function telaPerfil(){
       guardar("turma", sala);
     } else {
       const senha = document.getElementById("pSenha").value;
-      if(!(window.crypto && crypto.subtle)){ erroPerfil = "Este navegador não consegue checar a senha. Abra o site pelo link https."; desenhar(); return; }
-      if(await hashSenha(senha) !== SENHA_PROFESSOR_HASH){ erroPerfil = "Senha incorreta."; desenhar(); return; }
+      let ok = false;
+      try { ok = await chamar("checar_entrada", { p_senha: senha }); }
+      catch(e){ erroPerfil = "Não consegui conectar. Verifique a internet e tente de novo."; desenhar(); return; }
+      if(ok !== true){ erroPerfil = "Senha incorreta."; desenhar(); return; }
       guardar("perfil", JSON.stringify({ tipo:"professor", nome }));
+      guardar("profSenha", senha);
     }
     modoPerfil = null; erroPerfil = "";
     location.hash = ""; desenhar();
@@ -362,11 +399,44 @@ function telaPerfil(){
 function telaProfessor(){
   const p = perfilAtual();
   if(!p || p.tipo !== "professor"){ location.hash = ""; return; }
+  const salas = Object.keys(TURMAS).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
   app.innerHTML = `
     <button class="voltar" id="voltar">← Salas</button>
     <h2>Área do professor</h2>
-    <div class="vazio">Olá, ${esc(p.nome)}! Em breve vai ter novidades por aqui.</div>`;
+    <section class="cfg"><h3>Novo aviso para uma sala</h3>
+      <label class="rot" for="aSala">Sala</label>
+      <select class="campo" id="aSala">${salas}</select>
+      <label class="rot" for="aTitulo">Título</label>
+      <input class="campo" id="aTitulo" type="text" maxlength="80">
+      <label class="rot" for="aTexto">Aviso</label>
+      <textarea class="campo" id="aTexto" rows="4" maxlength="500"></textarea>
+      <label class="rot" for="aSenha">Senha de avisos</label>
+      <input class="campo" id="aSenha" type="password" autocomplete="off">
+      <p id="aMsg" class="dica" hidden></p>
+      <button class="botao" id="aPostar">Publicar aviso</button>
+    </section>`;
   document.getElementById("voltar").addEventListener("click", () => { location.hash = ""; });
+  const msg = (texto, erro) => { const m = document.getElementById("aMsg"); m.textContent = texto; m.className = erro ? "erro" : "dica"; m.hidden = false; };
+  document.getElementById("aPostar").addEventListener("click", async e => {
+    const titulo = document.getElementById("aTitulo").value.trim();
+    const texto = document.getElementById("aTexto").value.trim();
+    const senha = document.getElementById("aSenha").value;
+    if(!titulo || !texto){ msg("Preencha o título e o aviso.", true); return; }
+    if(!senha){ msg("Digite a senha de avisos.", true); return; }
+    const botao = e.currentTarget; botao.disabled = true;
+    try {
+      await chamar("postar_aviso", {
+        p_entrada: ler("profSenha") || "", p_aviso: senha, p_sala: document.getElementById("aSala").value,
+        p_professor: p.nome, p_titulo: titulo, p_texto: texto
+      });
+      document.getElementById("aTitulo").value = ""; document.getElementById("aTexto").value = ""; document.getElementById("aSenha").value = "";
+      msg("Aviso publicado!", false);
+    } catch(err){
+      if(/senha/i.test(err.message)) msg("Senha incorreta ou vencida. Se a senha de entrada mudou, vá em Configurações, toque em Trocar perfil e entre de novo.", true);
+      else msg("Não consegui publicar. Verifique a internet e tente de novo.", true);
+    }
+    botao.disabled = false;
+  });
 }
  
 function telaInicial(){
@@ -385,12 +455,13 @@ function telaInicial(){
   const ola = p ? `<h2>Olá, ${esc(p.nome)}!</h2>` : "";
   const areaProf = p && p.tipo === "professor"
     ? `<div class="grade uma" style="margin-bottom:12px"><button class="turma" id="irProf"><strong>Área do professor</strong><span>Toque para abrir</span></button></div>` : "";
-  app.innerHTML = `${ola}${areaProf}<p class="dica">Escolha sua sala para ver os dias e os horários.</p><div class="grade">${cartoes}</div>`;
+  app.innerHTML = `${ola}${areaProf}<div id="avisos"></div><p class="dica">Escolha sua sala para ver os dias e os horários.</p><div class="grade">${cartoes}</div>`;
   app.querySelectorAll("[data-turma]").forEach(b =>
     b.addEventListener("click", () => { diaEscolhido = null; location.hash = encodeURIComponent(b.dataset.turma); })
   );
   const ir = document.getElementById("irProf");
   if(ir) ir.addEventListener("click", () => { location.hash = "professor"; });
+  if(p && p.tipo === "aluno" && TURMAS[p.sala]) carregarAvisos(p.sala);
 }
  
 function telaTurma(nome){
@@ -419,6 +490,7 @@ function telaTurma(nome){
       <button class="fixar" id="fixar" aria-pressed="${fixada}">${fixada ? "★ Minha sala" : "☆ Fixar sala"}</button>
     </div>
     <h2>${esc(nome)}</h2>
+    <div id="avisos"></div>
     <div class="dias" role="group" aria-label="Dia da semana">${abasDia(diaEscolhido, k => livrosDoDia(nome, k).length)}</div>
     ${alerta}<ul class="aulas">${lista}</ul>`;
  
@@ -428,6 +500,7 @@ function telaTurma(nome){
     desenhar();
   });
   app.querySelectorAll("[data-dia]").forEach(b => b.addEventListener("click", () => { diaEscolhido = b.dataset.dia; desenhar(); }));
+  carregarAvisos(nome);
 }
 
 function telaPe(){
@@ -538,8 +611,8 @@ function telaConfig(){
     const lista = [...app.querySelectorAll("[data-prof]:checked")].map(x => x.dataset.prof);
     guardar("avisosLivro", JSON.stringify(lista));
   }));
-  document.getElementById("trocarPerfil").addEventListener("click", () => { apagar("perfil"); apagar("turma"); modoPerfil = null; location.hash = ""; desenhar(); });
-  document.getElementById("trocar").addEventListener("click", () => { apagar("escola"); apagar("turma"); apagar("perfil"); location.hash = ""; desenhar(); });
+  document.getElementById("trocarPerfil").addEventListener("click", () => { apagar("perfil"); apagar("profSenha"); apagar("turma"); modoPerfil = null; location.hash = ""; desenhar(); });
+  document.getElementById("trocar").addEventListener("click", () => { apagar("escola"); apagar("turma"); apagar("perfil"); apagar("profSenha"); location.hash = ""; desenhar(); });
 }
  
 function desenhar(){
