@@ -1,7 +1,7 @@
 {
   "name": "Horários da escola",
   "short_name": "Horários",
-  "start_url": "./",
+  "start_url": "index-2.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#EEF5EF",
