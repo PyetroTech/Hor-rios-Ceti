@@ -21,6 +21,7 @@
   header{background:var(--bus);border-bottom:6px solid var(--ink);padding:22px 18px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
   header h1{margin:0;font-size:1.7rem;font-weight:800;letter-spacing:-.02em}
   header p{margin:4px 0 0;font-weight:600}
+  .botoes{display:flex;gap:8px;flex:none}
   .engrenagem{background:var(--card);border:2px solid var(--ink);border-radius:50%;width:46px;height:46px;font-size:1.4rem;line-height:1;flex:none}
  
   main{max-width:640px;margin:0 auto;padding:18px}
@@ -70,6 +71,25 @@
   .cfg .dias{margin-bottom:0}
   .opcao{display:flex;align-items:center;gap:12px;padding:10px 0;font-weight:700;border-top:1px solid var(--line)}
   .opcao input{width:22px;height:22px;accent-color:var(--now)}
+
+  /* ---- novidades: perfil, Pé-de-Meia ---- */
+  .rot{display:block;font-weight:700;margin-bottom:6px}
+  .campo{display:block;width:100%;padding:12px;border:2px solid var(--ink);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;margin-bottom:12px}
+  .botao{background:var(--ink);color:var(--on);border:2px solid var(--ink);border-radius:99px;padding:10px 18px;font-weight:800}
+  .erro{color:var(--rojo);font-weight:700;margin:0 0 12px}
+  .contador{background:var(--agora);border:2px solid var(--now);border-radius:14px;padding:18px;text-align:center;margin-bottom:12px}
+  .contador b{display:block;font-size:3rem;line-height:1.05;font-weight:800}
+  .contador span{font-weight:700}
+  .mes{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .mes strong{font-size:1.1rem}
+  .mes button{background:var(--card);border:2px solid var(--ink);border-radius:10px;width:42px;height:38px;font-weight:800}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;margin-bottom:10px}
+  .cal .sem{font-size:.8rem;color:var(--mute);font-weight:700}
+  .cal button{aspect-ratio:1;background:var(--card);border:2px solid var(--line);border-radius:10px;font-weight:700;padding:0}
+  .cal .pag{border-color:var(--now);background:var(--agora)}
+  .cal .hoje{outline:2px dashed var(--ink);outline-offset:1px}
+  .cal .esc{background:var(--ink);color:var(--on);border-color:var(--ink)}
+  .legenda{font-size:.85rem;color:var(--mute);font-weight:600;margin:0 0 14px}
 </style>
 </head>
 <body>
@@ -79,7 +99,10 @@
     <h1>Horários da escola</h1>
     <p id="sub"></p>
   </div>
-  <button class="engrenagem" id="abrirConfig" aria-label="Configurações" title="Configurações">⚙️</button>
+  <div class="botoes">
+    <button class="engrenagem" id="abrirPe" aria-label="Pé-de-Meia" title="Pé-de-Meia">💰</button>
+    <button class="engrenagem" id="abrirConfig" aria-label="Configurações" title="Configurações">⚙️</button>
+  </div>
 </header>
 <main id="app"></main>
  
@@ -91,6 +114,25 @@
 // Escolas liberadas. Quando tiver os horários do Noronha Filho, é só
 // me pedir para liberar.
 const ESCOLAS = { ceti: "CETI Raimundo Pessoa" };
+
+// Senha do professor (guardada embaralhada, em SHA-256).
+// Senha temporária atual: professor2026
+// Para trocar, me mande a senha nova que eu te devolvo a linha pronta.
+const SENHA_PROFESSOR_HASH = "9576141106e1a2d2e67f8fc384336472cdad8ba9356e907cdd5329c13653f9d8";
+
+// Datas do Pé-de-Meia (calendário oficial do MEC para 2026).
+// data = dia do pagamento (ou início da janela); fim = último dia da janela, se for uma janela.
+const PAGAMENTOS = [
+  { data: "2026-10-19", rotulo: "Nascidos em janeiro e fevereiro" },
+  { data: "2026-10-20", rotulo: "Nascidos em março e abril" },
+  { data: "2026-10-21", rotulo: "Nascidos em maio e junho" },
+  { data: "2026-10-22", rotulo: "Nascidos em julho e agosto" },
+  { data: "2026-10-23", rotulo: "Nascidos em setembro e outubro" },
+  { data: "2026-10-26", rotulo: "Nascidos em novembro e dezembro" },
+  { data: "2026-11-23", fim: "2026-11-30", rotulo: "Janela de novembro (até 30/11)" },
+  { data: "2026-12-21", fim: "2026-12-28", rotulo: "Janela de dezembro (até 28/12)" },
+  { data: "2027-02-22", fim: "2027-03-01", rotulo: "Pagamento anual e residuais (até 01/03)" }
+];
  
 // Horário de cada aula (50 minutos cada, com 10 minutos de troca entre elas).
 const PERIODOS = [
@@ -171,9 +213,13 @@ const TURMAS = {
 const DIAS = [["seg","Seg"],["ter","Ter"],["qua","Qua"],["qui","Qui"],["sex","Sex"]];
 const CHAVE_DIA = ["dom","seg","ter","qua","qui","sex","sab"];
 const NOME_DIA = {seg:"segunda",ter:"terça",qua:"quarta",qui:"quinta",sex:"sexta"};
+const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
  
 const app = document.getElementById("app");
 let diaEscolhido = null;
+let peMes = null;      // mês mostrado no calendário do Pé-de-Meia: { ano, mes }
+let modoPerfil = null; // "aluno" ou "professor" na tela de entrada
+let erroPerfil = "";
  
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const minutos = hhmm => { const [h,m] = hhmm.split(":").map(Number); return h*60+m; };
@@ -182,6 +228,22 @@ const juntar = l => l.length < 2 ? l.join("") : l.slice(0,-1).join(", ") + " e "
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch(e) {} };
 const ler = k => { try { return localStorage.getItem(k); } catch(e) { return null; } };
 const apagar = k => { try { localStorage.removeItem(k); } catch(e) {} };
+
+/* ---------- datas ---------- */
+const parseData = s => { const [a,m,d] = s.split("-").map(Number); return new Date(a, m-1, d); };
+const chaveData = (a, m, d) => `${a}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+const formatar = s => { const d = parseData(s); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`; };
+const hoje0 = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
+const diasAte = s => Math.round((parseData(s) - hoje0()) / 86400000);
+
+/* ---------- perfil ---------- */
+function perfilAtual(){
+  try { return JSON.parse(ler("perfil") || "null"); } catch(e) { return null; }
+}
+async function hashSenha(texto){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto));
+  return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, "0")).join("");
+}
  
 /* ---------- tema ---------- */
 function temaAtual(){
@@ -242,10 +304,75 @@ function telaEscola(){
     location.hash = ""; desenhar();
   });
 }
+
+function telaPerfil(){
+  const salas = Object.keys(TURMAS).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  let corpo;
+  if(modoPerfil === "aluno"){
+    corpo = `
+      <label class="rot" for="pNome">Seu nome</label>
+      <input class="campo" id="pNome" type="text" maxlength="40" autocomplete="given-name">
+      <label class="rot" for="pSala">Sua sala</label>
+      <select class="campo" id="pSala">${salas}</select>
+      ${erroPerfil ? `<p class="erro">${esc(erroPerfil)}</p>` : ""}
+      <button class="botao" id="pEntrar">Entrar</button>`;
+  } else if(modoPerfil === "professor"){
+    corpo = `
+      <label class="rot" for="pNome">Seu nome</label>
+      <input class="campo" id="pNome" type="text" maxlength="40" autocomplete="given-name">
+      <label class="rot" for="pSenha">Senha de professor</label>
+      <input class="campo" id="pSenha" type="password" autocomplete="off">
+      ${erroPerfil ? `<p class="erro">${esc(erroPerfil)}</p>` : ""}
+      <button class="botao" id="pEntrar">Entrar</button>`;
+  } else {
+    corpo = `
+      <div class="grade">
+        <button class="turma" data-modo="aluno"><strong>Sou aluno</strong><span>Nome e sala</span></button>
+        <button class="turma" data-modo="professor"><strong>Sou professor</strong><span>Entrar com senha</span></button>
+      </div>`;
+  }
+  document.getElementById("sub").textContent = ESCOLAS[ler("escola")] || "";
+  app.innerHTML = `
+    ${modoPerfil ? '<button class="voltar" id="pVoltar">← Voltar</button>' : ""}
+    <h2>Quem é você?</h2>${corpo}`;
+
+  app.querySelectorAll("[data-modo]").forEach(b => b.addEventListener("click", () => { modoPerfil = b.dataset.modo; erroPerfil = ""; desenhar(); }));
+  const voltar = document.getElementById("pVoltar");
+  if(voltar) voltar.addEventListener("click", () => { modoPerfil = null; erroPerfil = ""; desenhar(); });
+  const entrar = document.getElementById("pEntrar");
+  if(!entrar) return;
+  entrar.addEventListener("click", async () => {
+    const nome = document.getElementById("pNome").value.trim();
+    if(!nome){ erroPerfil = "Digite seu nome."; desenhar(); return; }
+    if(modoPerfil === "aluno"){
+      const sala = document.getElementById("pSala").value;
+      guardar("perfil", JSON.stringify({ tipo:"aluno", nome, sala }));
+      guardar("turma", sala);
+    } else {
+      const senha = document.getElementById("pSenha").value;
+      if(!(window.crypto && crypto.subtle)){ erroPerfil = "Este navegador não consegue checar a senha. Abra o site pelo link https."; desenhar(); return; }
+      if(await hashSenha(senha) !== SENHA_PROFESSOR_HASH){ erroPerfil = "Senha incorreta."; desenhar(); return; }
+      guardar("perfil", JSON.stringify({ tipo:"professor", nome }));
+    }
+    modoPerfil = null; erroPerfil = "";
+    location.hash = ""; desenhar();
+  });
+}
+
+function telaProfessor(){
+  const p = perfilAtual();
+  if(!p || p.tipo !== "professor"){ location.hash = ""; return; }
+  app.innerHTML = `
+    <button class="voltar" id="voltar">← Salas</button>
+    <h2>Área do professor</h2>
+    <div class="vazio">Olá, ${esc(p.nome)}! Em breve vai ter novidades por aqui.</div>`;
+  document.getElementById("voltar").addEventListener("click", () => { location.hash = ""; });
+}
  
 function telaInicial(){
   const t = agora();
   const fixada = ler("turma");
+  const p = perfilAtual();
   const hoje = NOME_DIA[t.dia] ? t.dia : null;
   const cartoes = Object.keys(TURMAS).map(nome => {
     const a = hoje ? aulaAgora(nome) : null;
@@ -255,10 +382,15 @@ function telaInicial(){
     return `<button class="turma ${a ? "ativa" : ""}" data-turma="${esc(nome)}">
       <strong>${esc(nome)}${fixada === nome ? " ★" : ""}</strong><span>${esc(status)}</span>${aviso}</button>`;
   }).join("");
-  app.innerHTML = `<p class="dica">Escolha sua sala para ver os dias e os horários.</p><div class="grade">${cartoes}</div>`;
+  const ola = p ? `<h2>Olá, ${esc(p.nome)}!</h2>` : "";
+  const areaProf = p && p.tipo === "professor"
+    ? `<div class="grade uma" style="margin-bottom:12px"><button class="turma" id="irProf"><strong>Área do professor</strong><span>Toque para abrir</span></button></div>` : "";
+  app.innerHTML = `${ola}${areaProf}<p class="dica">Escolha sua sala para ver os dias e os horários.</p><div class="grade">${cartoes}</div>`;
   app.querySelectorAll("[data-turma]").forEach(b =>
     b.addEventListener("click", () => { diaEscolhido = null; location.hash = encodeURIComponent(b.dataset.turma); })
   );
+  const ir = document.getElementById("irProf");
+  if(ir) ir.addEventListener("click", () => { location.hash = "professor"; });
 }
  
 function telaTurma(nome){
@@ -297,10 +429,89 @@ function telaTurma(nome){
   });
   app.querySelectorAll("[data-dia]").forEach(b => b.addEventListener("click", () => { diaEscolhido = b.dataset.dia; desenhar(); }));
 }
+
+function telaPe(){
+  const escolhida = ler("peData");
+  const hoje = hoje0();
+  if(!peMes){
+    const base = escolhida ? parseData(escolhida) : hoje;
+    peMes = { ano: base.getFullYear(), mes: base.getMonth() };
+  }
+  const { ano, mes } = peMes;
+  const pagamentos = new Set();
+  PAGAMENTOS.forEach(p => pagamentos.add(p.data));
+
+  /* contador */
+  let contador = `<div class="contador"><span>Escolha uma data no calendário ou na lista abaixo.</span></div>`;
+  if(escolhida){
+    const n = diasAte(escolhida);
+    if(n > 1) contador = `<div class="contador"><b>${n}</b><span>dias até ${formatar(escolhida)}</span></div>`;
+    else if(n === 1) contador = `<div class="contador"><b>1</b><span>dia até ${formatar(escolhida)}. É amanhã!</span></div>`;
+    else if(n === 0) contador = `<div class="contador"><b>Hoje! 🎉</b><span>Hoje o dinheiro cai.</span></div>`;
+    else contador = `<div class="contador"><span>Essa data (${formatar(escolhida)}) já passou. Escolha a próxima.</span></div>`;
+  }
+
+  /* calendário */
+  const primeiro = new Date(ano, mes, 1).getDay();
+  const total = new Date(ano, mes + 1, 0).getDate();
+  const hojeChave = chaveData(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  let celulas = ["D","S","T","Q","Q","S","S"].map(d => `<span class="sem">${d}</span>`).join("");
+  for(let i = 0; i < primeiro; i++) celulas += "<span></span>";
+  for(let d = 1; d <= total; d++){
+    const ch = chaveData(ano, mes, d);
+    const classes = [pagamentos.has(ch) ? "pag" : "", ch === hojeChave ? "hoje" : "", ch === escolhida ? "esc" : ""].join(" ");
+    celulas += `<button class="${classes}" data-data="${ch}" aria-label="${d} de ${MESES[mes]}">${d}</button>`;
+  }
+
+  /* lista de datas */
+  const proximas = PAGAMENTOS.filter(p => diasAte(p.fim || p.data) >= 0);
+  const lista = proximas.length ? proximas.map(p => `
+    <li class="aula">
+      <time>${formatar(p.data)}${p.fim ? `<small>até ${formatar(p.fim)}</small>` : ""}</time>
+      <span class="materia">${esc(p.rotulo)}</span>
+      <span class="lado"><button class="fixar" data-usar="${p.data}">Contar</button></span>
+    </li>`).join("") : `<div class="vazio">Nenhuma data futura cadastrada.</div>`;
+
+  app.innerHTML = `
+    <button class="voltar" id="voltar">← Voltar</button>
+    <h2>Pé-de-Meia</h2>
+    ${contador}
+    <label class="rot" for="peInput">Contar até o dia</label>
+    <input class="campo" id="peInput" type="date" value="${esc(escolhida || "")}">
+    ${escolhida ? '<button class="fixar" id="peLimpar" style="margin-bottom:14px">Limpar data</button>' : ""}
+    <div class="mes">
+      <button id="mesAnt" aria-label="Mês anterior">‹</button>
+      <strong>${MESES[mes]} ${ano}</strong>
+      <button id="mesProx" aria-label="Próximo mês">›</button>
+    </div>
+    <div class="cal">${celulas}</div>
+    <p class="legenda">Dias com fundo verde são datas de pagamento. Toque em um dia para contar até ele.</p>
+    <h3>Próximas datas</h3>
+    <p class="dica">O dia do seu pagamento depende do seu mês de nascimento. Confira no app Pé-de-Meia ou no app Benefícios Sociais CAIXA.</p>
+    <ul class="aulas">${lista}</ul>`;
+
+  document.getElementById("voltar").addEventListener("click", () => { location.hash = ""; });
+  document.getElementById("peInput").addEventListener("change", e => {
+    if(e.target.value) guardar("peData", e.target.value); else apagar("peData");
+    desenhar();
+  });
+  const limpar = document.getElementById("peLimpar");
+  if(limpar) limpar.addEventListener("click", () => { apagar("peData"); desenhar(); });
+  document.getElementById("mesAnt").addEventListener("click", () => { peMes = mes === 0 ? { ano: ano-1, mes: 11 } : { ano, mes: mes-1 }; desenhar(); });
+  document.getElementById("mesProx").addEventListener("click", () => { peMes = mes === 11 ? { ano: ano+1, mes: 0 } : { ano, mes: mes+1 }; desenhar(); });
+  app.querySelectorAll("[data-data]").forEach(b => b.addEventListener("click", () => { guardar("peData", b.dataset.data); desenhar(); }));
+  app.querySelectorAll("[data-usar]").forEach(b => b.addEventListener("click", () => {
+    guardar("peData", b.dataset.usar);
+    const d = parseData(b.dataset.usar); peMes = { ano: d.getFullYear(), mes: d.getMonth() };
+    desenhar();
+  }));
+}
  
 function telaConfig(){
   const ativos = avisosAtivos();
   const tema = temaAtual();
+  const p = perfilAtual();
+  const quem = p ? (p.tipo === "professor" ? `${p.nome} · professor` : `${p.nome} · ${p.sala}`) : "";
   const opcoes = Object.keys(LIVROS).map(n =>
     `<label class="opcao"><input type="checkbox" data-prof="${esc(n)}" ${ativos.includes(n) ? "checked" : ""}> ${esc(n)}</label>`
   ).join("");
@@ -313,6 +524,10 @@ function telaConfig(){
     <section class="cfg"><h3>Avisos de livro</h3>
       <p class="dica">Marque as matérias em que você quer ser avisado para levar o livro.</p>${opcoes}
     </section>
+    <section class="cfg"><h3>Quem sou eu</h3>
+      <p class="dica">${esc(quem)}</p>
+      <button class="fixar" id="trocarPerfil">Trocar perfil</button>
+    </section>
     <section class="cfg"><h3>Escola</h3>
       <p class="dica">${esc(ESCOLAS[ler("escola")] || "")}</p>
       <button class="fixar" id="trocar">Trocar escola</button>
@@ -323,7 +538,8 @@ function telaConfig(){
     const lista = [...app.querySelectorAll("[data-prof]:checked")].map(x => x.dataset.prof);
     guardar("avisosLivro", JSON.stringify(lista));
   }));
-  document.getElementById("trocar").addEventListener("click", () => { apagar("escola"); apagar("turma"); location.hash = ""; desenhar(); });
+  document.getElementById("trocarPerfil").addEventListener("click", () => { apagar("perfil"); apagar("turma"); modoPerfil = null; location.hash = ""; desenhar(); });
+  document.getElementById("trocar").addEventListener("click", () => { apagar("escola"); apagar("turma"); apagar("perfil"); location.hash = ""; desenhar(); });
 }
  
 function desenhar(){
@@ -331,20 +547,28 @@ function desenhar(){
   const escola = ler("escola");
   if(!ESCOLAS[escola]) { telaEscola(); return; }
   document.getElementById("sub").textContent = ESCOLAS[escola];
+  if(!perfilAtual()) { telaPerfil(); return; }
   if(hash === "config") telaConfig();
+  else if(hash === "pe") telaPe();
+  else if(hash === "professor") telaProfessor();
   else if(hash && TURMAS[hash]) telaTurma(hash);
   else telaInicial();
 }
  
 document.getElementById("abrirConfig").addEventListener("click", () => {
-  if(ESCOLAS[ler("escola")]) location.hash = "config";
+  if(ESCOLAS[ler("escola")] && perfilAtual()) location.hash = "config";
+});
+document.getElementById("abrirPe").addEventListener("click", () => {
+  if(ESCOLAS[ler("escola")] && perfilAtual()) location.hash = "pe";
 });
 window.addEventListener("hashchange", () => { desenhar(); window.scrollTo(0,0); });
-setInterval(() => { if(!/config/.test(location.hash)) desenhar(); }, 60000);
+setInterval(() => {
+  const h = decodeURIComponent(location.hash.slice(1));
+  if(perfilAtual() && ESCOLAS[ler("escola")] && (!h || TURMAS[h])) desenhar();
+}, 60000);
 const fixadaAoAbrir = ler("turma");
-if(!location.hash && ESCOLAS[ler("escola")] && fixadaAoAbrir && TURMAS[fixadaAoAbrir]) location.hash = encodeURIComponent(fixadaAoAbrir);
+if(!location.hash && ESCOLAS[ler("escola")] && perfilAtual() && fixadaAoAbrir && TURMAS[fixadaAoAbrir]) location.hash = encodeURIComponent(fixadaAoAbrir);
 desenhar();
 </script>
 </body>
 </html>
- 
