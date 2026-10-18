@@ -259,24 +259,30 @@ async function api(caminho, opcoes){
 }
 const chamar = (fn, args) => api("rpc/" + fn, { method: "POST", body: JSON.stringify(args) });
 function buscarAvisos(sala){
-  const desde = new Date(Date.now() - 14*86400000).toISOString();
-  return api("avisos?select=id,professor,titulo,texto,criado_em&sala=eq." + encodeURIComponent(sala)
-    + "&criado_em=gte." + encodeURIComponent(desde) + "&order=criado_em.desc&limit=10");
+  return api("avisos?select=id,professor,titulo,texto,criado_em,expira_em&sala=eq." + encodeURIComponent(sala)
+    + "&order=criado_em.desc&limit=10");
 }
+const dm = iso => { const d = new Date(iso); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`; };
 function avisosHtml(lista){
   if(!lista || !lista.length) return "";
   const itens = lista.map(a => {
     const d = new Date(a.criado_em);
     const quando = `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-    return `<div class="aviso"><strong>${esc(a.titulo)}</strong><p>${esc(a.texto)}</p><small>Prof. ${esc(a.professor)} · ${quando}</small></div>`;
+    return `<div class="aviso"><strong>${esc(a.titulo)}</strong><p>${esc(a.texto)}</p><small>Prof. ${esc(a.professor)} · ${quando}${a.expira_em ? " · some em " + dm(a.expira_em) : ""}</small></div>`;
   }).join("");
   return `<section class="cfg"><h3>📣 Avisos</h3>${itens}</section>`;
 }
 function carregarAvisos(sala){
+  const el0 = document.getElementById("avisos");
+  if(el0) el0.innerHTML = '<p class="dica">Carregando avisos…</p>';
   buscarAvisos(sala).then(l => {
     const el = document.getElementById("avisos");
-    if(el) el.innerHTML = avisosHtml(l);
-  }).catch(() => {});
+    if(!el) return;
+    el.innerHTML = avisosHtml(l) || '<p class="dica">Nenhum aviso para ' + esc(sala) + ' nos últimos 14 dias.</p>';
+  }).catch(err => {
+    const el = document.getElementById("avisos");
+    if(el) el.innerHTML = '<p class="erro">Não consegui carregar os avisos (' + esc(err.message) + ').</p>';
+  });
 }
  
 /* ---------- tema ---------- */
@@ -410,13 +416,51 @@ function telaProfessor(){
       <input class="campo" id="aTitulo" type="text" maxlength="80">
       <label class="rot" for="aTexto">Aviso</label>
       <textarea class="campo" id="aTexto" rows="4" maxlength="500"></textarea>
+      <label class="rot" for="aDias">O aviso some sozinho depois de</label>
+      <select class="campo" id="aDias">
+        <option value="1">1 dia</option><option value="3">3 dias</option>
+        <option value="7" selected>7 dias</option><option value="14">14 dias</option><option value="30">30 dias</option>
+      </select>
       <label class="rot" for="aSenha">Senha de avisos</label>
       <input class="campo" id="aSenha" type="password" autocomplete="off">
       <p id="aMsg" class="dica" hidden></p>
       <button class="botao" id="aPostar">Publicar aviso</button>
+    </section>
+    <section class="cfg"><h3>Avisos publicados</h3>
+      <p class="dica">Para apagar um aviso, digite a senha de avisos no campo acima e toque em Apagar.</p>
+      <div id="lista"><p class="dica">Carregando…</p></div>
     </section>`;
   document.getElementById("voltar").addEventListener("click", () => { location.hash = ""; });
-  const msg = (texto, erro) => { const m = document.getElementById("aMsg"); m.textContent = texto; m.className = erro ? "erro" : "dica"; m.hidden = false; };
+  const msg = (texto, erro) => {
+    const m = document.getElementById("aMsg"); m.textContent = texto; m.className = erro ? "erro" : "dica"; m.hidden = false;
+    m.scrollIntoView({ block: "center" });
+  };
+  const textoErro = (err, acao) => /senha/i.test(err.message)
+    ? "Senha incorreta ou vencida. Se a senha de entrada mudou, vá em Configurações, toque em Trocar perfil e entre de novo."
+    : "Não consegui " + acao + ". Verifique a internet e tente de novo.";
+
+  async function listar(){
+    const el = document.getElementById("lista");
+    try {
+      const l = await api("avisos?select=id,sala,professor,titulo,expira_em&order=criado_em.desc&limit=30");
+      el.innerHTML = l.length ? l.map(a => `<div class="aviso"><strong>${esc(a.titulo)}</strong>
+        <small>${esc(a.sala)} · Prof. ${esc(a.professor)} · some em ${dm(a.expira_em)}</small><br>
+        <button class="fixar" data-apagar="${a.id}" style="margin-top:6px">Apagar</button></div>`).join("")
+        : '<p class="dica">Nenhum aviso publicado.</p>';
+      el.querySelectorAll("[data-apagar]").forEach(b => b.addEventListener("click", async () => {
+        const senha = document.getElementById("aSenha").value;
+        if(!senha){ msg("Digite a senha de avisos para apagar.", true); return; }
+        if(!confirm("Apagar este aviso?")) return;
+        b.disabled = true;
+        try {
+          await chamar("apagar_aviso", { p_entrada: ler("profSenha") || "", p_aviso: senha, p_id: Number(b.dataset.apagar) });
+          msg("Aviso apagado.", false); listar();
+        } catch(err){ msg(textoErro(err, "apagar"), true); b.disabled = false; }
+      }));
+    } catch(err){ el.innerHTML = '<p class="erro">Não consegui carregar a lista de avisos.</p>'; }
+  }
+  listar();
+
   document.getElementById("aPostar").addEventListener("click", async e => {
     const titulo = document.getElementById("aTitulo").value.trim();
     const texto = document.getElementById("aTexto").value.trim();
@@ -427,14 +471,11 @@ function telaProfessor(){
     try {
       await chamar("postar_aviso", {
         p_entrada: ler("profSenha") || "", p_aviso: senha, p_sala: document.getElementById("aSala").value,
-        p_professor: p.nome, p_titulo: titulo, p_texto: texto
+        p_professor: p.nome, p_titulo: titulo, p_texto: texto, p_dias: Number(document.getElementById("aDias").value)
       });
-      document.getElementById("aTitulo").value = ""; document.getElementById("aTexto").value = ""; document.getElementById("aSenha").value = "";
-      msg("Aviso publicado!", false);
-    } catch(err){
-      if(/senha/i.test(err.message)) msg("Senha incorreta ou vencida. Se a senha de entrada mudou, vá em Configurações, toque em Trocar perfil e entre de novo.", true);
-      else msg("Não consegui publicar. Verifique a internet e tente de novo.", true);
-    }
+      document.getElementById("aTitulo").value = ""; document.getElementById("aTexto").value = "";
+      msg("Aviso publicado!", false); listar();
+    } catch(err){ msg(textoErro(err, "publicar"), true); }
     botao.disabled = false;
   });
 }
