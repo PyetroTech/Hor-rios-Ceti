@@ -199,6 +199,51 @@
   :root[data-tema^="classico"] .cfg.avisos-card{border-color:var(--ink);border-radius:14px}
   :root[data-tema^="classico"] .hero{border-radius:14px;border:2px solid var(--ink)}
   :root[data-tema^="classico"] .contador{border-radius:14px}
+
+  /* ---- animações calmas (só ao trocar de tela) ---- */
+  @keyframes entra{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes cresce{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  #app[data-anim="1"] > *{animation:entra .45s cubic-bezier(.2,.7,.2,1) both}
+  #app[data-anim="1"] > *:nth-child(2){animation-delay:0.090s}
+  #app[data-anim="1"] > *:nth-child(3){animation-delay:0.135s}
+  #app[data-anim="1"] > *:nth-child(4){animation-delay:0.180s}
+  #app[data-anim="1"] > *:nth-child(5){animation-delay:0.225s}
+  #app[data-anim="1"] > *:nth-child(6){animation-delay:0.270s}
+  #app[data-anim="1"] > *:nth-child(7){animation-delay:0.315s}
+  #app[data-anim="1"] > *:nth-child(8){animation-delay:0.360s}
+  #app[data-anim="1"] > *:nth-child(9){animation-delay:0.405s}
+  #app[data-anim="1"] .aulas > li:nth-child(1),#app[data-anim="1"] .grade > .turma:nth-child(1){animation:entra .4s 0.16s cubic-bezier(.2,.7,.2,1) both}
+  #app[data-anim="1"] .aulas > li:nth-child(2),#app[data-anim="1"] .grade > .turma:nth-child(2){animation:entra .4s 0.20s cubic-bezier(.2,.7,.2,1) both}
+  #app[data-anim="1"] .aulas > li:nth-child(3),#app[data-anim="1"] .grade > .turma:nth-child(3){animation:entra .4s 0.24s cubic-bezier(.2,.7,.2,1) both}
+  #app[data-anim="1"] .aulas > li:nth-child(4),#app[data-anim="1"] .grade > .turma:nth-child(4){animation:entra .4s 0.28s cubic-bezier(.2,.7,.2,1) both}
+  #app[data-anim="1"] .aulas > li:nth-child(5),#app[data-anim="1"] .grade > .turma:nth-child(5){animation:entra .4s 0.32s cubic-bezier(.2,.7,.2,1) both}
+  #app[data-anim="1"] .aulas > li:nth-child(6),#app[data-anim="1"] .grade > .turma:nth-child(6){animation:entra .4s 0.36s cubic-bezier(.2,.7,.2,1) both}
+  #app[data-anim="1"] .aulas > li:nth-child(7),#app[data-anim="1"] .grade > .turma:nth-child(7){animation:entra .4s 0.40s cubic-bezier(.2,.7,.2,1) both}
+  #app[data-anim="1"] .aulas > li:nth-child(8),#app[data-anim="1"] .grade > .turma:nth-child(8){animation:entra .4s 0.44s cubic-bezier(.2,.7,.2,1) both}
+  #app[data-anim="1"] .aulas > li:nth-child(9),#app[data-anim="1"] .grade > .turma:nth-child(9){animation:entra .4s 0.48s cubic-bezier(.2,.7,.2,1) both}
+  #app[data-anim="1"] .aulas > li:nth-child(10),#app[data-anim="1"] .grade > .turma:nth-child(10){animation:entra .4s 0.52s cubic-bezier(.2,.7,.2,1) both}
+  #app[data-anim="1"] .aulas > li:nth-child(11),#app[data-anim="1"] .grade > .turma:nth-child(11){animation:entra .4s 0.56s cubic-bezier(.2,.7,.2,1) both}
+  #app[data-anim="1"] .aulas > li:nth-child(12),#app[data-anim="1"] .grade > .turma:nth-child(12){animation:entra .4s 0.60s cubic-bezier(.2,.7,.2,1) both}
+  
+  .barra i{transform-origin:left}
+  #app[data-anim="1"] .barra i{animation:cresce .9s .25s cubic-bezier(.2,.7,.2,1) both}
+  .turma,.fixar,.botao,.tema-op,.dias button,.engrenagem,.acc-cab{transition:transform .15s ease,background-color .2s ease,border-color .2s ease,box-shadow .2s ease}
+  .turma:active,.fixar:active,.botao:active,.tema-op:active,.dias button:active,.engrenagem:active{transform:scale(.97)}
+  @media (hover:hover){.turma:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(20,22,58,.12)}}
+  :root[data-mov="off"] *,:root[data-mov="off"] *::before,:root[data-mov="off"] *::after{animation:none!important;transition:none!important}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+  /* ---- cardápio e trava de sala ---- */
+  .refeicao{display:flex;gap:12px;align-items:flex-start;padding:9px 10px;border-radius:12px}
+  .refeicao.prox{background:var(--agora)}
+  .ref-hora{flex:none;width:50px;font-family:var(--titulo);font-weight:800;font-size:1.05rem}
+  .refeicao strong{display:block}
+  .refeicao div span{display:block;color:var(--mute);font-weight:500}
+  .acc.interno{margin-top:8px;border-top:1px solid var(--line)}
+  .acc.interno .acc-cab{padding:12px 2px}
+  .acc.interno .acc-int{padding:0 2px}
+  .cardapio-dia span{display:block}
+  .cardapio-dia i{font-style:normal;color:var(--mute);font-weight:600}
+  .trava .botao{margin-top:2px}
 </style>
 </head>
 <body>
@@ -254,6 +299,13 @@ const DATAS_IMPORTANTES = [
   { data: "2026-11-15", rotulo: "Enem, 2º dia" },
   { data: "2026-11-20", rotulo: "Consciência Negra (feriado)" },
   { data: "2026-12-25", rotulo: "Natal (feriado)" }
+];
+
+// Refeições do dia (aparecem no cardápio). Pode mudar os nomes e os horários.
+const REFEICOES = [
+  { chave: "lanche1", nome: "Lanche da manhã", hora: "09:30" },
+  { chave: "almoco",  nome: "Almoço",          hora: "11:50" },
+  { chave: "lanche2", nome: "Lanche da tarde", hora: "14:50" }
 ];
 
 // Horário de cada aula (50 minutos cada, com 10 minutos de troca entre elas).
@@ -354,6 +406,8 @@ const ICONES = {
   calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
   utensils: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
   flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',
+  lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>'
 };
 const ic = (nome, cheio) => `<svg class="ic" viewBox="0 0 24 24" fill="${cheio ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[nome]}</svg>`;
@@ -383,7 +437,8 @@ async function ativarPush(sala){
   let sub = await reg.pushManager.getSubscription();
   if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chaveParaBytes(VAPID_PUBLIC_KEY) });
   const j = sub.toJSON();
-  await chamar("salvar_inscricao", { p_sala: sala, p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
+  const okIns = await chamar("salvar_inscricao", { p_sala: sala, p_senha: salaSenha(sala), p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
+  if(okIns !== true) throw new Error("Digite antes a senha da sala (na tela inicial, no cartão de avisos) e tente de novo.");
   guardar("pushSala", sala);
   pushInscrito = true;
 }
@@ -409,15 +464,16 @@ async function verificarPush(p){
     const reg = await navigator.serviceWorker.getRegistration();
     const sub = reg ? await reg.pushManager.getSubscription() : null;
     const ativo = !!sub && Notification.permission === "granted";
+    let final = ativo;
     if(ativo && ler("pushSala") !== p.sala){
       const j = sub.toJSON();
-      await chamar("salvar_inscricao", { p_sala: p.sala, p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
-      guardar("pushSala", p.sala);
+      const okIns = await chamar("salvar_inscricao", { p_sala: p.sala, p_senha: salaSenha(p.sala), p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
+      if(okIns === true) guardar("pushSala", p.sala); else final = false;
     }
-    if(!ativo && ler("pushSala")) apagar("pushSala");
-    pushInscrito = ativo;
+    if(!final && ler("pushSala")) apagar("pushSala");
+    pushInscrito = final;
     const h = location.hash.slice(1);
-    if(antes !== ativo && (h === "" || h === "config")) desenhar();
+    if(antes !== final && (h === "" || h === "config")) desenhar();
   } catch(e) {}
 }
 function blocoPush(p){
@@ -504,49 +560,93 @@ async function postarAviso(args){
   return d;
 }
 const chamar = (fn, args) => api("rpc/" + fn, { method: "POST", body: JSON.stringify(args) });
-function buscarAvisos(sala){
-  return api("avisos?select=id,professor,titulo,texto,tipo,criado_em,expira_em&tipo=in.(aviso,vaga)&sala=eq." + encodeURIComponent(sala)
-    + "&order=criado_em.desc&limit=10");
+/* ---------- leitura protegida pela senha da sala ---------- */
+const salaSenha = sala => ler("salaSenha:" + sala) || "";
+const limparSenhasSala = () => { try { Object.keys(localStorage).filter(k => k.startsWith("salaSenha:")).forEach(k => localStorage.removeItem(k)); } catch(e) {} };
+const papelAtual = () => { const p = perfilAtual(); return p ? p.tipo : null; };
+const buscasSala = {};
+function buscarSala(sala){
+  const b = buscasSala[sala];
+  if(b && Date.now() - b.t < 8000) return b.p;
+  const prom = chamar("ler_avisos", { p_sala: sala, p_senha: salaSenha(sala) }).then(r => {
+    if(!r || r.ok !== true) throw new Error("senha incorreta");
+    return r.itens || [];
+  });
+  buscasSala[sala] = { t: Date.now(), p: prom };
+  prom.catch(() => { delete buscasSala[sala]; });
+  return prom;
 }
-function buscarAgenda(sala){
-  return api("avisos?select=id,professor,titulo,texto,tipo,data&tipo=in.(prova,trabalho)&sala=eq." + encodeURIComponent(sala)
-    + "&order=data.asc&limit=20");
-}
-function buscarVagas(sala){
-  return api("avisos?select=data,periodo,texto&tipo=eq.vaga&sala=eq." + encodeURIComponent(sala) + "&limit=50");
-}
+const buscarAvisos = sala => buscarSala(sala).then(l => l.filter(a => a.tipo === "aviso" || a.tipo === "vaga").slice(0, 10));
+const buscarAgenda = sala => buscarSala(sala).then(l => l.filter(a => a.tipo === "prova" || a.tipo === "trabalho")
+  .sort((x, y) => (x.data + (x.hora || "")) < (y.data + (y.hora || "")) ? -1 : 1));
+const buscarVagas = sala => buscarSala(sala).then(l => l.filter(a => a.tipo === "vaga"));
 function buscarCardapio(){ return api("cardapio?select=*&id=eq.1"); }
 const dm = iso => { const d = new Date(iso); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`; };
 function avisosHtml(lista){
   if(!lista || !lista.length) return "";
   const itens = lista.map(a => {
-    const d = new Date(a.criado_em);
+    const d = new Date(a.publicar_em || a.criado_em);
     const quando = `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-    return `<div class="aviso"><strong>${esc(a.titulo)}</strong>${a.texto ? `<p>${esc(a.texto)}</p>` : ""}<small>Prof. ${esc(a.professor)} · ${quando}${a.expira_em ? " · some em " + dm(a.expira_em) : ""}</small></div>`;
+    const autor = a.professor === "Direção" ? "Direção" : "Prof. " + a.professor;
+    const escopo = a.sala === "Todas" ? "Toda a escola · " : "";
+    return `<div class="aviso"><strong>${esc(a.titulo)}</strong>${a.texto ? `<p>${esc(a.texto)}</p>` : ""}<small>${escopo}${esc(autor)} · ${quando}${a.expira_em ? " · some em " + dm(a.expira_em) : ""}</small></div>`;
   }).join("");
   return `<section class="cfg avisos-card"><h3>${ic("megaphone")} Avisos</h3>${itens}</section>`;
 }
 /* Mostra na hora o que já foi carregado antes e atualiza quando o servidor responder. */
 const cacheBlocos = {};
-function carregarBloco(id, chave, buscar, montar, vazio){
+function carregarBloco(id, chave, buscar, montar, vazio, erro){
   const el0 = document.getElementById(id);
-  if(el0 && cacheBlocos[chave] !== undefined){ el0.innerHTML = cacheBlocos[chave]; ligarAcc(el0); }
+  if(el0 && cacheBlocos[chave] !== undefined){ el0.innerHTML = cacheBlocos[chave]; ligarAcc(el0); ligarTrava(el0); }
   buscar().then(dados => {
     const html = montar(dados) || vazio || "";
     cacheBlocos[chave] = html;
     const el = document.getElementById(id);
-    if(el){ el.innerHTML = html; ligarAcc(el); }
+    if(el){ el.innerHTML = html; ligarAcc(el); ligarTrava(el); }
   }).catch(err => {
-    if(cacheBlocos[chave] !== undefined) return;
+    const custom = erro ? erro(err) : null;
     const el = document.getElementById(id);
+    if(custom){ cacheBlocos[chave] = custom; if(el){ el.innerHTML = custom; ligarTrava(el); } return; }
+    if(cacheBlocos[chave] !== undefined) return;
     if(el && vazio !== "") el.innerHTML = '<p class="erro">Não consegui carregar (' + esc(err.message) + ').</p>';
   });
 }
+function travaHtml(sala, msg){
+  const aviso = /tentativas/i.test(msg) ? msg : "";
+  return `<section class="cfg trava"><h3>${ic("lock")} Avisos de ${esc(sala)}</h3>
+    <p class="dica">Os avisos e as provas desta sala são só para quem tem a senha da sala. Peça ao seu professor.</p>
+    <label class="rot" for="travaSenha">Senha da sala</label>
+    <input class="campo" id="travaSenha" type="password" autocomplete="off">
+    <p class="erro" id="travaErro"${aviso ? "" : " hidden"}>${esc(aviso)}</p>
+    <button class="botao" data-trava="${esc(sala)}">Desbloquear</button></section>`;
+}
+function ligarTrava(raiz){
+  raiz.querySelectorAll("[data-trava]").forEach(b => b.addEventListener("click", async () => {
+    const sala = b.dataset.trava, campo = raiz.querySelector("#travaSenha"), erroEl = raiz.querySelector("#travaErro");
+    const senha = campo.value.trim();
+    erroEl.hidden = true;
+    if(!senha){ erroEl.textContent = "Digite a senha da sala."; erroEl.hidden = false; return; }
+    b.disabled = true;
+    try {
+      const ok = await chamar("checar_sala", { p_sala: sala, p_senha: senha });
+      if(ok !== true){ erroEl.textContent = "Senha incorreta."; erroEl.hidden = false; b.disabled = false; return; }
+      guardar("salaSenha:" + sala, senha);
+      delete buscasSala[sala]; delete cacheBlocos["avisos:" + sala]; delete cacheBlocos["agenda:" + sala];
+      desenhar();
+    } catch(e){
+      erroEl.textContent = /tentativas/i.test(e.message) ? e.message : "Não consegui conferir. Verifique a internet.";
+      erroEl.hidden = false; b.disabled = false;
+    }
+  }));
+}
 function carregarAvisos(sala){
+  if(papelAtual() !== "aluno") return;
   carregarBloco("avisos", "avisos:" + sala, () => buscarAvisos(sala), avisosHtml,
-    '<p class="dica">Nenhum aviso para ' + esc(sala) + ' no momento.</p>');
+    '<p class="dica">Nenhum aviso para ' + esc(sala) + ' no momento.</p>',
+    err => /senha|tentativas/i.test(err.message) ? travaHtml(sala, err.message) : null);
 }
 function carregarAgenda(sala){
+  if(papelAtual() !== "aluno") return;
   carregarBloco("agenda", "agenda:" + sala, () => buscarAgenda(sala), agendaHtml, "");
 }
 function carregarCardapio(){
@@ -555,6 +655,7 @@ function carregarCardapio(){
 /* aulas vagas: se mudou algo, redesenha a tela da sala uma vez */
 const vagasPorSala = {};
 function carregarVagas(sala){
+  if(papelAtual() !== "aluno") return;
   buscarVagas(sala).then(l => {
     const novo = JSON.stringify(l || []);
     if(JSON.stringify(vagasPorSala[sala] || []) === novo) return;
@@ -571,7 +672,7 @@ function agendaHtml(lista){
   const futuros = (lista || []).filter(e => e.data && diasAte(e.data) >= 0);
   if(!futuros.length) return "";
   const itens = futuros.map(e => `<div class="evento">${caixaData(e.data)}<div><strong>${esc(e.titulo)}</strong>
-    <small>${e.tipo === "prova" ? "Prova" : "Trabalho"} · ${quandoTexto(diasAte(e.data))}${e.texto ? " · " + esc(e.texto) : ""}</small></div></div>`).join("");
+    <small>${e.tipo === "prova" ? "Prova" : "Trabalho"} · ${quandoTexto(diasAte(e.data))}${e.hora ? " · às " + esc(e.hora) : ""}${e.texto ? " · " + esc(e.texto) : ""}</small></div></div>`).join("");
   return `<section class="cfg"><h3>${ic("calendar")} Provas e trabalhos</h3>${itens}</section>`;
 }
 
@@ -584,12 +685,16 @@ function segundaDaSemana(){
 function cardapioHtml(linhas){
   const c = linhas && linhas[0];
   if(!c || c.semana !== segundaDaSemana()) return "";
+  const dados = c.dados || DIAS.reduce((o, [k]) => { o[k] = { lanche2: c[k] || "" }; return o; }, {});
   const t = agora();
   const util = !!NOME_DIA[t.dia];
-  const chave = util ? t.dia : "seg";
-  const doDia = (c[chave] || "").trim() || "Sem cardápio";
-  const semana = DIAS.map(([k, r]) => `<div class="cardapio-dia"><b>${r}</b><span>${esc((c[k] || "").trim() || "Sem cardápio")}</span></div>`).join("");
-  return acordeao("cardapio", util ? "Lanche de hoje" : "Lanche de segunda", doDia, semana);
+  const dia = dados[util ? t.dia : "seg"] || {};
+  const proxima = util ? REFEICOES.findIndex(r => minutos(r.hora) + 40 > t.min) : -1;
+  const linhasHoje = REFEICOES.map((r, i) => `<div class="refeicao${i === proxima ? " prox" : ""}"><span class="ref-hora">${r.hora}</span>
+    <div><strong>${esc(r.nome)}</strong><span>${esc(((dia[r.chave] || "") + "").trim() || "Sem cardápio")}</span></div></div>`).join("");
+  const semana = DIAS.map(([k, rot]) => { const d = dados[k] || {};
+    return `<div class="cardapio-dia"><b>${rot}</b><div>${REFEICOES.map(r => `<span><i>${esc(r.nome)}:</i> ${esc(((d[r.chave] || "") + "").trim() || "—")}</span>`).join("")}</div></div>`; }).join("");
+  return `<section class="cfg"><h3>${ic("utensils")} ${util ? "Cardápio de hoje" : "Cardápio de segunda"}</h3>${linhasHoje}${acordeaoInterno("cardapio", "Ver a semana toda", "", semana)}</section>`;
 }
 
 function datasHtml(){
@@ -614,6 +719,9 @@ function temaAtual(){
   return matchMedia("(prefers-color-scheme: dark)").matches ? "escuro" : "claro";
 }
 function aplicarTema(){ document.documentElement.dataset.tema = temaAtual(); }
+const animOn = () => ler("anim") !== "off";
+function aplicarAnim(){ document.documentElement.dataset.mov = animOn() ? "on" : "off"; }
+aplicarAnim();
 aplicarTema();
  
 /* ---------- avisos de livro (desligados por padrão) ---------- */
@@ -732,6 +840,15 @@ function acordeao(id, titulo, resumo, corpo){
     <div class="acc-corpo" id="acc-${id}"><div class="acc-int">${corpo}</div></div>
   </section>`;
 }
+function acordeaoInterno(id, titulo, resumo, corpo){
+  const aberto = accAbertos.has(id);
+  return `<div class="acc interno${aberto ? " aberto" : ""}" data-acc="${id}">
+    <button class="acc-cab" aria-expanded="${aberto}" aria-controls="acc-${id}">
+      <span class="acc-tit">${esc(titulo)}</span><span class="acc-resumo">${esc(resumo)}</span>${SETA_BAIXO}
+    </button>
+    <div class="acc-corpo" id="acc-${id}"><div class="acc-int">${corpo}</div></div>
+  </div>`;
+}
 function ligarAcc(raiz){
   (raiz || app).querySelectorAll(".acc-cab").forEach(cab => cab.addEventListener("click", () => {
     const sec = cab.closest(".acc");
@@ -759,6 +876,7 @@ function telaEscola(){
 
 function telaPerfil(){
   const salas = Object.keys(TURMAS).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  const msgErro = erroPerfil ? `<p class="erro">${esc(erroPerfil)}</p>` : "";
   let corpo;
   if(modoPerfil === "aluno"){
     corpo = `
@@ -766,7 +884,10 @@ function telaPerfil(){
       <input class="campo" id="pNome" type="text" maxlength="40" autocomplete="given-name">
       <label class="rot" for="pSala">Sua sala</label>
       <select class="campo" id="pSala">${salas}</select>
-      ${erroPerfil ? `<p class="erro">${esc(erroPerfil)}</p>` : ""}
+      <label class="rot" for="pSalaSenha">Senha da sala</label>
+      <input class="campo" id="pSalaSenha" type="password" autocomplete="off">
+      <p class="dica">A senha da sala é a que o seu professor passou. Ela libera os avisos e as provas da sua sala.</p>
+      ${msgErro}
       <button class="botao" id="pEntrar">Entrar</button>`;
   } else if(modoPerfil === "professor"){
     corpo = `
@@ -774,18 +895,27 @@ function telaPerfil(){
       <input class="campo" id="pNome" type="text" maxlength="40" autocomplete="given-name">
       <label class="rot" for="pSenha">Senha de professor</label>
       <input class="campo" id="pSenha" type="password" autocomplete="off">
-      ${erroPerfil ? `<p class="erro">${esc(erroPerfil)}</p>` : ""}
+      ${msgErro}
+      <button class="botao" id="pEntrar">Entrar</button>`;
+  } else if(modoPerfil === "diretor"){
+    corpo = `
+      <label class="rot" for="pNome">Seu nome</label>
+      <input class="campo" id="pNome" type="text" maxlength="40" autocomplete="given-name">
+      <label class="rot" for="pSenha">Senha da direção</label>
+      <input class="campo" id="pSenha" type="password" autocomplete="off">
+      ${msgErro}
       <button class="botao" id="pEntrar">Entrar</button>`;
   } else {
     corpo = `
       <div class="grade">
-        <button class="turma" data-modo="aluno"><strong>Sou aluno</strong><span>Nome e sala</span></button>
+        <button class="turma" data-modo="aluno"><strong>Sou aluno</strong><span>Nome, sala e senha da sala</span></button>
         <button class="turma" data-modo="professor"><strong>Sou professor</strong><span>Entrar com senha</span></button>
+        <button class="turma" data-modo="diretor"><strong>Sou da direção</strong><span>Entrar com senha</span></button>
       </div>`;
   }
   document.getElementById("sub").textContent = ESCOLAS[ler("escola")] || "";
   app.innerHTML = `
-    ${modoPerfil ? '<button class="voltar" id="pVoltar"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg> Voltar</button>' : ""}
+    ${modoPerfil ? '<button class="voltar" id="pVoltar">' + VOLTAR_ICONE + ' Voltar</button>' : ""}
     <h2>Quem é você?</h2>${corpo}`;
 
   app.querySelectorAll("[data-modo]").forEach(b => b.addEventListener("click", () => { modoPerfil = b.dataset.modo; erroPerfil = ""; desenhar(); }));
@@ -796,18 +926,31 @@ function telaPerfil(){
   entrar.addEventListener("click", async () => {
     const nome = document.getElementById("pNome").value.trim();
     if(!nome){ erroPerfil = "Digite seu nome."; desenhar(); return; }
+    const falha = e => { erroPerfil = /tentativas/i.test(e.message) ? e.message : "Não consegui conectar. Verifique a internet e tente de novo."; desenhar(); };
     if(modoPerfil === "aluno"){
       const sala = document.getElementById("pSala").value;
+      const senhaSala = document.getElementById("pSalaSenha").value.trim();
+      if(!senhaSala){ erroPerfil = "Digite a senha da sua sala."; desenhar(); return; }
+      let ok = false;
+      try { ok = await chamar("checar_sala", { p_sala: sala, p_senha: senhaSala }); } catch(e){ falha(e); return; }
+      if(ok !== true){ erroPerfil = "Senha da sala incorreta."; desenhar(); return; }
       guardar("perfil", JSON.stringify({ tipo:"aluno", nome, sala }));
       guardar("turma", sala);
+      guardar("salaSenha:" + sala, senhaSala);
+    } else if(modoPerfil === "professor"){
+      const senha = document.getElementById("pSenha").value;
+      let ok = false;
+      try { ok = await chamar("checar_entrada", { p_senha: senha }); } catch(e){ falha(e); return; }
+      if(ok !== true){ erroPerfil = "Senha incorreta."; desenhar(); return; }
+      guardar("perfil", JSON.stringify({ tipo:"professor", nome }));
+      guardar("profSenha", senha); apagar("dirSenha");
     } else {
       const senha = document.getElementById("pSenha").value;
       let ok = false;
-      try { ok = await chamar("checar_entrada", { p_senha: senha }); }
-      catch(e){ erroPerfil = "Não consegui conectar. Verifique a internet e tente de novo."; desenhar(); return; }
+      try { ok = await chamar("checar_diretor", { p_senha: senha }); } catch(e){ falha(e); return; }
       if(ok !== true){ erroPerfil = "Senha incorreta."; desenhar(); return; }
-      guardar("perfil", JSON.stringify({ tipo:"professor", nome }));
-      guardar("profSenha", senha);
+      guardar("perfil", JSON.stringify({ tipo:"diretor", nome }));
+      guardar("dirSenha", senha); apagar("profSenha");
     }
     modoPerfil = null; erroPerfil = "";
     location.hash = ""; desenhar();
@@ -816,30 +959,43 @@ function telaPerfil(){
 
 function telaProfessor(){
   const p = perfilAtual();
-  if(!p || p.tipo !== "professor"){ location.hash = ""; return; }
-  const salas = Object.keys(TURMAS).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  if(!p || (p.tipo !== "professor" && p.tipo !== "diretor")){ location.hash = ""; return; }
+  const diretor = p.tipo === "diretor";
+  const $ = id => document.getElementById(id);
+  const salasOpts = (diretor ? '<option value="Todas">Toda a escola</option>' : "")
+    + Object.keys(TURMAS).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
   const horarios = PERIODOS.filter(x => !x.intervalo).map((x, i) => `<option value="${i + 1}">${i + 1}º horário (${x.ini})</option>`).join("");
   const hojeISO = chaveData(hoje0().getFullYear(), hoje0().getMonth(), hoje0().getDate());
-  const campoCardapio = DIAS.map(([k, r]) => `<label class="rot" for="c-${k}">${r}</label><input class="campo" id="c-${k}" type="text" maxlength="120">`).join("");
+  const campoSenha = diretor ? "" : `<label class="rot" for="aSenha">Senha de avisos</label>
+      <input class="campo" id="aSenha" type="password" autocomplete="off">`;
+  const campoLogin = diretor
+    ? `<div id="fEntrada" hidden><label class="rot" for="aDir">Senha da direção (se mudou)</label><input class="campo" id="aDir" type="password" autocomplete="off"></div>`
+    : `<div id="fEntrada" hidden><label class="rot" for="aEntrada">Senha de entrada da semana</label><input class="campo" id="aEntrada" type="password" autocomplete="off"></div>`;
+  const chipsDias = DIAS.map(([k, r]) => `<button data-d="${k}" aria-pressed="${k === "seg"}">${r}</button>`).join("");
   const cardapioForm = acordeao("cardapioEd", "Cardápio da semana", "Editar",
-    `<p class="dica">Vale para a semana que começa em ${dm(segundaDaSemana() + "T12:00:00")}.</p>${campoCardapio}<button class="botao" id="cSalvar">Salvar cardápio</button>`);
+    `<p class="dica">Vale para a semana que começa em ${dm(segundaDaSemana() + "T12:00:00")}. Escolha o dia e preencha as três refeições.</p>
+     <div class="dias" id="cDias">${chipsDias}</div><div id="cCampos"></div>
+     <button class="botao" id="cSalvar">Salvar cardápio</button>`);
+
   app.innerHTML = `
     <button class="voltar" id="voltar">${VOLTAR_ICONE} Salas</button>
-    <h2>Área do professor</h2>
-    <section class="cfg"><h3>Publicar para uma sala</h3>
+    <h2>${diretor ? "Área da direção" : "Área do professor"}</h2>
+    <section class="cfg"><h3>Publicar</h3>
       <label class="rot" for="pTipo">O que você quer publicar?</label>
       <select class="campo" id="pTipo">
         <option value="aviso">Aviso</option><option value="prova">Prova</option>
         <option value="trabalho">Trabalho</option><option value="vaga">Aula vaga</option>
       </select>
-      <label class="rot" for="aSala">Sala</label>
-      <select class="campo" id="aSala">${salas}</select>
+      <label class="rot" for="aSala">Para quem</label>
+      <select class="campo" id="aSala">${salasOpts}</select>
       <div id="fTitulo"><label class="rot" for="aTitulo" id="rTitulo">Título</label>
         <input class="campo" id="aTitulo" type="text" maxlength="80"></div>
       <div id="fTexto"><label class="rot" for="aTexto" id="rTexto">Aviso</label>
         <textarea class="campo" id="aTexto" rows="4" maxlength="500"></textarea></div>
-      <div id="fData" hidden><label class="rot" for="aData">Data</label>
+      <div id="fData" hidden><label class="rot" for="aData">Dia</label>
         <input class="campo" id="aData" type="date" value="${hojeISO}"></div>
+      <div id="fHora" hidden><label class="rot" for="aHora">Horário (opcional)</label>
+        <input class="campo" id="aHora" type="time"></div>
       <div id="fHorario" hidden><label class="rot" for="aPeriodo">Horário sem aula</label>
         <select class="campo" id="aPeriodo">${horarios}</select></div>
       <div id="fDias"><label class="rot" for="aDias">O aviso some sozinho depois de</label>
@@ -847,112 +1003,161 @@ function telaProfessor(){
           <option value="1">1 dia</option><option value="3">3 dias</option>
           <option value="7" selected>7 dias</option><option value="14">14 dias</option><option value="30">30 dias</option>
         </select></div>
-      <div id="fEntrada" hidden><label class="rot" for="aEntrada">Senha de entrada da semana</label>
-        <input class="campo" id="aEntrada" type="password" autocomplete="off"></div>
-      <label class="rot" for="aSenha">Senha de avisos</label>
-      <input class="campo" id="aSenha" type="password" autocomplete="off">
+      <label class="rot" for="aQuando">Quando publicar</label>
+      <select class="campo" id="aQuando"><option value="agora">Agora</option><option value="agendar">Agendar para um dia e uma hora</option></select>
+      <div id="fQuando" hidden><label class="rot" for="aQuandoDt">Dia e hora (horário de Brasília)</label>
+        <input class="campo" id="aQuandoDt" type="datetime-local"></div>
+      ${campoLogin}
+      ${campoSenha}
       <p id="aMsg" class="dica" hidden></p>
       <button class="botao" id="aPostar">Publicar</button>
     </section>
     ${cardapioForm}
-    <section class="cfg"><h3>Publicados</h3>
-      <p class="dica">Para apagar, digite a senha de avisos no campo acima e toque em Apagar.</p>
+    <section class="cfg"><h3>Publicados e agendados</h3>
+      ${diretor ? "" : '<p class="dica">Para apagar, digite a senha de avisos no campo acima e toque em Apagar.</p>'}
       <div id="lista"><p class="dica">Carregando…</p></div>
     </section>`;
-  document.getElementById("voltar").addEventListener("click", () => { location.hash = ""; });
+  $("voltar").addEventListener("click", () => { location.hash = ""; });
   ligarAcc(app);
-  const $ = id => document.getElementById(id);
 
+  /* ----- credenciais ----- */
+  const loginPart = () => diretor
+    ? { p_entrada: "", p_diretor: $("aDir").value || ler("dirSenha") || "" }
+    : { p_entrada: $("aEntrada").value || ler("profSenha") || "", p_diretor: "" };
+  const credFull = () => Object.assign(loginPart(), { p_aviso: diretor ? "" : $("aSenha").value });
   const msg = (texto, erro) => {
     const m = $("aMsg"); m.textContent = texto; m.className = erro ? "erro" : "dica"; m.hidden = false;
     m.scrollIntoView({ block: "center" });
   };
   const textoErro = (err, acao) => {
-    if(/senha/i.test(err.message)){ $("fEntrada").hidden = false; return "Senha incorreta ou vencida. Se a senha de entrada mudou, digite a nova no campo que apareceu e tente de novo."; }
+    if(/senha/i.test(err.message)){
+      $("fEntrada").hidden = false;
+      return diretor ? "Senha da direção incorreta ou trocada. Digite a nova no campo que apareceu."
+                     : "Senha incorreta ou vencida. Se a senha de entrada mudou, digite a nova no campo que apareceu e tente de novo.";
+    }
     return "Não consegui " + acao + " (" + err.message + "). Verifique a internet e tente de novo.";
   };
-  const entradaAtual = () => $("aEntrada").value || ler("profSenha") || "";
 
+  /* ----- formulário muda conforme o tipo ----- */
   function ajustar(){
     const tipo = $("pTipo").value;
     $("fData").hidden = tipo === "aviso";
+    $("fHora").hidden = !(tipo === "prova" || tipo === "trabalho");
     $("fHorario").hidden = tipo !== "vaga";
     $("fDias").hidden = tipo !== "aviso";
     $("fTitulo").hidden = tipo === "vaga";
-    $("fTexto").hidden = false;
+    $("fQuando").hidden = $("aQuando").value !== "agendar";
+    const optTodas = $("aSala").querySelector('option[value="Todas"]');
+    if(optTodas){ optTodas.disabled = tipo !== "aviso"; if(tipo !== "aviso" && $("aSala").value === "Todas") $("aSala").selectedIndex = 1; }
     $("rTitulo").textContent = tipo === "aviso" ? "Título" : "Matéria e assunto";
     $("rTexto").textContent = tipo === "aviso" ? "Aviso" : (tipo === "vaga" ? "Motivo ou recado (opcional)" : "Detalhes (opcional)");
     $("aTitulo").placeholder = tipo === "aviso" ? "" : "Ex.: Matemática, funções";
-    $("aPostar").textContent = tipo === "aviso" ? "Publicar aviso" : (tipo === "prova" ? "Marcar prova" : (tipo === "trabalho" ? "Marcar trabalho" : "Avisar aula vaga"));
+    const agendado = $("aQuando").value === "agendar";
+    const verbo = { aviso: "aviso", prova: "prova", trabalho: "trabalho", vaga: "aula vaga" }[tipo];
+    $("aPostar").textContent = agendado ? "Agendar " + verbo : (tipo === "aviso" ? "Publicar aviso" : (tipo === "prova" ? "Marcar prova" : (tipo === "trabalho" ? "Marcar trabalho" : "Avisar aula vaga")));
   }
   $("pTipo").addEventListener("change", ajustar);
+  $("aQuando").addEventListener("change", ajustar);
   ajustar();
 
+  /* ----- lista de publicados e agendados ----- */
   const NOMES = { aviso: "Aviso", prova: "Prova", trabalho: "Trabalho", vaga: "Aula vaga" };
+  const hm = iso => { const d = new Date(iso); return `${dm(iso)} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
   async function listar(){
     const el = $("lista");
     try {
-      const l = await api("avisos?select=id,sala,professor,titulo,tipo,data,expira_em&order=criado_em.desc&limit=30");
-      el.innerHTML = l.length ? l.map(a => `<div class="aviso"><strong>${esc(a.titulo)}</strong>
-        <small>${NOMES[a.tipo] || "Aviso"} · ${esc(a.sala)} · Prof. ${esc(a.professor)}${a.data ? " · dia " + dm(a.data + "T12:00:00") : ""} · some em ${dm(a.expira_em)}</small><br>
-        <button class="fixar" data-apagar="${a.id}" style="margin-top:6px">Apagar</button></div>`).join("")
-        : '<p class="dica">Nada publicado.</p>';
+      const l = await chamar("listar_avisos_prof", loginPart());
+      const novoLogin = diretor ? $("aDir").value : $("aEntrada").value;
+      if(novoLogin){ guardar(diretor ? "dirSenha" : "profSenha", novoLogin); (diretor ? $("aDir") : $("aEntrada")).value = ""; $("fEntrada").hidden = true; }
+      el.innerHTML = l.length ? l.map(a => {
+        const agendado = new Date(a.publicar_em) > new Date();
+        const escopo = a.sala === "Todas" ? "Toda a escola" : a.sala;
+        return `<div class="aviso"><strong>${esc(a.titulo)}</strong>
+          <small>${NOMES[a.tipo] || "Aviso"} · ${esc(escopo)} · ${a.professor === "Direção" ? "Direção" : "Prof. " + esc(a.professor)}${a.data ? " · dia " + dm(a.data + "T12:00:00") : ""}${a.hora ? " às " + esc(a.hora) : ""}${agendado ? " · agendado para " + hm(a.publicar_em) : " · some em " + dm(a.expira_em)}</small><br>
+          <button class="fixar" data-apagar="${a.id}" style="margin-top:6px">Apagar</button></div>`;
+      }).join("") : '<p class="dica">Nada publicado nem agendado.</p>';
       el.querySelectorAll("[data-apagar]").forEach(b => b.addEventListener("click", async () => {
-        const senha = $("aSenha").value;
-        if(!senha){ msg("Digite a senha de avisos para apagar.", true); return; }
+        if(!diretor && !$("aSenha").value){ msg("Digite a senha de avisos para apagar.", true); return; }
         if(!confirm("Apagar este item?")) return;
         b.disabled = true;
         try {
-          await chamar("apagar_aviso", { p_entrada: entradaAtual(), p_aviso: senha, p_id: Number(b.dataset.apagar) });
+          await chamar("apagar_aviso2", Object.assign(credFull(), { p_id: Number(b.dataset.apagar) }));
           msg("Apagado.", false); listar();
         } catch(err){ msg(textoErro(err, "apagar"), true); b.disabled = false; }
       }));
-    } catch(err){ el.innerHTML = '<p class="erro">Não consegui carregar a lista (' + esc(err.message) + ').</p>'; }
+    } catch(err){
+      el.innerHTML = '<p class="erro">Não consegui carregar a lista (' + esc(err.message) + ').</p>';
+      if(/senha/i.test(err.message)) $("fEntrada").hidden = false;
+    }
   }
   listar();
+  (diretor ? $("aDir") : $("aEntrada")).addEventListener("change", listar);
 
+  /* ----- publicar ----- */
   $("aPostar").addEventListener("click", async e => {
     const tipo = $("pTipo").value;
     const sala = $("aSala").value;
     let titulo = $("aTitulo").value.trim();
     const texto = $("aTexto").value.trim();
-    const senha = $("aSenha").value;
     const data = $("aData").value;
     const periodo = Number($("aPeriodo").value);
     if(tipo === "vaga") titulo = "Sem aula no " + periodo + "º horário";
     if(!titulo){ msg("Preencha o título.", true); return; }
     if(tipo === "aviso" && !texto){ msg("Escreva o aviso.", true); return; }
-    if(tipo !== "aviso" && !data){ msg("Escolha a data.", true); return; }
-    if(!senha){ msg("Digite a senha de avisos.", true); return; }
+    if(tipo !== "aviso" && !data){ msg("Escolha o dia.", true); return; }
+    if(tipo !== "aviso" && sala === "Todas"){ msg("Provas, trabalhos e aulas vagas precisam de uma sala. Escolha uma sala.", true); return; }
+    if(!diretor && !$("aSenha").value){ msg("Digite a senha de avisos.", true); return; }
+    let publicarEm = null;
+    if($("aQuando").value === "agendar"){
+      const v = $("aQuandoDt").value;
+      const d = v ? new Date(v + ":00-03:00") : null;
+      if(!d || isNaN(d)){ msg("Escolha o dia e a hora do agendamento.", true); return; }
+      if(d.getTime() < Date.now() + 60000){ msg("Escolha um horário no futuro.", true); return; }
+      publicarEm = d.toISOString();
+    }
     const botao = e.currentTarget; botao.disabled = true;
     try {
-      const res = await postarAviso({
-        p_entrada: entradaAtual(), p_aviso: senha, p_sala: sala, p_professor: p.nome, p_tipo: tipo,
+      const res = await postarAviso(Object.assign(credFull(), {
+        p_sala: sala, p_professor: diretor ? "Direção" : p.nome, p_tipo: tipo,
         p_titulo: titulo, p_texto: texto, p_dias: Number($("aDias").value),
-        p_data: tipo === "aviso" ? null : data, p_periodo: tipo === "vaga" ? periodo : null
-      });
-      if($("aEntrada").value){ guardar("profSenha", $("aEntrada").value); $("fEntrada").hidden = true; $("aEntrada").value = ""; }
+        p_data: tipo === "aviso" ? null : data,
+        p_hora: (tipo === "prova" || tipo === "trabalho") ? ($("aHora").value || null) : null,
+        p_periodo: tipo === "vaga" ? periodo : null,
+        p_publicar_em: publicarEm
+      }));
+      if(!diretor && $("aEntrada").value){ guardar("profSenha", $("aEntrada").value); $("fEntrada").hidden = true; $("aEntrada").value = ""; }
+      if(diretor && $("aDir").value){ guardar("dirSenha", $("aDir").value); $("fEntrada").hidden = true; $("aDir").value = ""; }
       $("aTitulo").value = ""; $("aTexto").value = "";
-      msg((tipo === "aviso" ? "Aviso publicado!" : "Publicado!") + (res && res.enviados ? " Notificação enviada para " + res.enviados + " aparelho(s)." : ""), false);
+      msg(res && res.agendado ? "Agendado para " + hm(publicarEm) + "." : ((tipo === "aviso" ? "Aviso publicado!" : "Publicado!") + (res && res.enviados ? " Notificação enviada para " + res.enviados + " aparelho(s)." : "")), false);
       listar();
     } catch(err){ msg(textoErro(err, "publicar"), true); }
     botao.disabled = false;
   });
 
-  /* cardápio */
+  /* ----- cardápio: 3 refeições por dia ----- */
+  const cardapioEd = {};
+  DIAS.forEach(([k]) => { cardapioEd[k] = {}; REFEICOES.forEach(r => { cardapioEd[k][r.chave] = ""; }); });
+  let diaEd = "seg";
+  function desenharCampos(){
+    $("cCampos").innerHTML = REFEICOES.map(r => `<label class="rot" for="c-${r.chave}">${esc(r.nome)} (${r.hora})</label>
+      <input class="campo" id="c-${r.chave}" type="text" maxlength="120" value="${esc(cardapioEd[diaEd][r.chave] || "")}">`).join("");
+    REFEICOES.forEach(r => $("c-" + r.chave).addEventListener("input", ev => { cardapioEd[diaEd][r.chave] = ev.target.value; }));
+    app.querySelectorAll("#cDias button").forEach(b => b.setAttribute("aria-pressed", b.dataset.d === diaEd));
+  }
+  app.querySelectorAll("#cDias button").forEach(b => b.addEventListener("click", () => { diaEd = b.dataset.d; desenharCampos(); }));
+  desenharCampos();
   buscarCardapio().then(l => {
     const c = l && l[0];
-    if(c && c.semana === segundaDaSemana()) DIAS.forEach(([k]) => { $("c-" + k).value = c[k] || ""; });
+    if(c && c.semana === segundaDaSemana() && c.dados){
+      DIAS.forEach(([k]) => REFEICOES.forEach(r => { cardapioEd[k][r.chave] = (c.dados[k] && c.dados[k][r.chave]) || ""; }));
+      desenharCampos();
+    }
   }).catch(() => {});
   $("cSalvar").addEventListener("click", async e => {
-    const senha = $("aSenha").value;
-    if(!senha){ msg("Digite a senha de avisos (no campo lá em cima) para salvar o cardápio.", true); window.scrollTo(0, 0); return; }
+    if(!diretor && !$("aSenha").value){ msg("Digite a senha de avisos (no campo lá em cima) para salvar o cardápio.", true); window.scrollTo(0, 0); return; }
     const botao = e.currentTarget; botao.disabled = true;
     try {
-      await chamar("salvar_cardapio", {
-        p_entrada: entradaAtual(), p_aviso: senha, p_semana: segundaDaSemana(),
-        p_seg: $("c-seg").value, p_ter: $("c-ter").value, p_qua: $("c-qua").value, p_qui: $("c-qui").value, p_sex: $("c-sex").value
-      });
+      await chamar("salvar_cardapio2", Object.assign(credFull(), { p_semana: segundaDaSemana(), p_dados: cardapioEd }));
       delete cacheBlocos.cardapio;
       msg("Cardápio salvo!", false);
     } catch(err){ msg(textoErro(err, "salvar o cardápio"), true); }
@@ -975,8 +1180,8 @@ function telaInicial(){
   }).join("");
   const ola = p ? `<h2>Olá, ${esc(p.nome)}!</h2>` : "";
   const salaHero = (p && p.tipo === "aluno" && TURMAS[p.sala]) ? p.sala : (TURMAS[fixada] ? fixada : null);
-  const areaProf = p && p.tipo === "professor"
-    ? `<div class="grade uma" style="margin-bottom:12px"><button class="turma" id="irProf"><strong>Área do professor</strong><span>Toque para abrir</span></button></div>` : "";
+  const areaProf = p && (p.tipo === "professor" || p.tipo === "diretor")
+    ? `<div class="grade uma" style="margin-bottom:12px"><button class="turma" id="irProf"><strong>${p.tipo === "diretor" ? "Área da direção" : "Área do professor"}</strong><span>Toque para abrir</span></button></div>` : "";
   app.innerHTML = `${ola}${heroHtml(salaHero)}${areaProf}<div id="avisos"></div><div id="agenda"></div><div id="cardapio"></div>${datasHtml()}${pushAtivo(p) ? "" : blocoPush(p)}<p class="dica">Escolha sua sala para ver os dias e os horários.</p><div class="grade">${cartoes}</div>`;
   app.querySelectorAll("[data-turma]").forEach(b =>
     b.addEventListener("click", () => { diaEscolhido = null; location.hash = encodeURIComponent(b.dataset.turma); })
@@ -1117,7 +1322,7 @@ function telaConfig(){
   const ativos = avisosAtivos();
   const tema = temaAtual();
   const p = perfilAtual();
-  const quem = p ? (p.tipo === "professor" ? `${p.nome} · professor` : `${p.nome} · ${p.sala}`) : "";
+  const quem = p ? (p.tipo === "professor" ? `${p.nome} · professor` : (p.tipo === "diretor" ? `${p.nome} · direção` : `${p.nome} · ${p.sala}`)) : "";
   const opcoes = Object.keys(LIVROS).map(n =>
     `<label class="opcao"><input type="checkbox" data-prof="${esc(n)}" ${ativos.includes(n) ? "checked" : ""}> ${esc(n)}</label>`
   ).join("");
@@ -1125,7 +1330,7 @@ function telaConfig(){
       <span class="tema-prev" style="background:${t.cores[0]}"><i style="background:${t.cores[1]}"></i><i style="background:${t.cores[2]}"></i></span>
       <span>${esc(t.nome)}</span></button>`).join("");
   const acTema = acordeao("tema", "Tema", TEMAS.find(t => t.id === tema).nome,
-    `<div class="temas">${temaOpcoes}</div><p class="dica" style="margin:12px 0 0">Mais temas em breve.</p>`);
+    `<div class="temas">${temaOpcoes}</div><p class="dica" style="margin:12px 0 0">Mais temas em breve.</p><label class="opcao" style="margin-top:12px"><input type="checkbox" id="animChk" ${animOn() ? "checked" : ""}> Animações suaves</label>`);
   const acLivros = acordeao("livros", "Avisos de livro", resumoLivros(ativos.length),
     `<p class="dica">Marque as matérias em que você quer ser avisado para levar o livro.</p>${opcoes}`);
   app.innerHTML = `
@@ -1148,6 +1353,8 @@ function telaConfig(){
   verificarPush(p);
   ligarInstalar();
   ligarAcc(app);
+  const animChk = document.getElementById("animChk");
+  if(animChk) animChk.addEventListener("change", () => { guardar("anim", animChk.checked ? "on" : "off"); aplicarAnim(); });
   app.querySelectorAll("[data-tema]").forEach(b => b.addEventListener("click", () => {
     guardar("tema", b.dataset.tema); aplicarTema();
     app.querySelectorAll("[data-tema]").forEach(x => x.setAttribute("aria-pressed", x === b));
@@ -1160,13 +1367,17 @@ function telaConfig(){
     const resumo = app.querySelector('[data-acc="livros"] .acc-resumo');
     if(resumo) resumo.textContent = resumoLivros(lista.length);
   }));
-  document.getElementById("trocarPerfil").addEventListener("click", () => { desativarPush(); apagar("perfil"); apagar("profSenha"); apagar("turma"); modoPerfil = null; location.hash = ""; desenhar(); });
-  document.getElementById("trocar").addEventListener("click", () => { desativarPush(); apagar("escola"); apagar("turma"); apagar("perfil"); apagar("profSenha"); location.hash = ""; desenhar(); });
+  document.getElementById("trocarPerfil").addEventListener("click", () => { desativarPush(); apagar("perfil"); apagar("profSenha"); apagar("dirSenha"); limparSenhasSala(); apagar("turma"); modoPerfil = null; location.hash = ""; desenhar(); });
+  document.getElementById("trocar").addEventListener("click", () => { desativarPush(); apagar("escola"); apagar("turma"); apagar("perfil"); apagar("profSenha"); apagar("dirSenha"); limparSenhasSala(); location.hash = ""; desenhar(); });
 }
  
+let ultimaRota = null;
 function desenhar(){
   const hash = decodeURIComponent(location.hash.slice(1));
   const escola = ler("escola");
+  const rota = hash + "|" + (modoPerfil || "") + "|" + (hash && TURMAS[hash] ? diaEscolhido : "");
+  app.dataset.anim = (rota !== ultimaRota && animOn()) ? "1" : "0";
+  ultimaRota = rota;
   if(!ESCOLAS[escola]) { telaEscola(); return; }
   document.getElementById("sub").textContent = ESCOLAS[escola];
   if(!perfilAtual()) { telaPerfil(); return; }
@@ -1194,5 +1405,4 @@ desenhar();
 </script>
 </body>
 </html>
-
     
