@@ -244,9 +244,32 @@
   .cardapio-dia span{display:block}
   .cardapio-dia i{font-style:normal;color:var(--mute);font-weight:600}
   .trava .botao{margin-top:2px}
+
+  /* ---- tela de carregamento ---- */
+  #splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(170deg,#12844b 0%,#075e36 100%);color:#fff;transition:opacity .5s ease,visibility .5s ease;animation:spSome 0s 7s forwards}
+  #splash.sai{opacity:0;visibility:hidden}
+  .sp-logo{width:116px;height:116px;border-radius:30px;background:#fff;display:grid;place-items:center;box-shadow:0 12px 32px rgba(0,0,0,.28);animation:spEntra .8s cubic-bezier(.2,.7,.2,1) both}
+  .sp-logo svg{width:68px;height:68px;fill:none;stroke:#0f7a45;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .sp-nome{margin:24px 28px 0;font-family:var(--titulo);font-weight:800;font-size:1.4rem;line-height:1.15;text-align:center;letter-spacing:-.01em;animation:spEntra .8s .15s cubic-bezier(.2,.7,.2,1) both}
+  .sp-sub{margin:6px 0 0;font-size:.95rem;font-weight:500;opacity:.85;animation:spEntra .8s .25s cubic-bezier(.2,.7,.2,1) both}
+  .sp-barra{width:min(260px,70vw);height:8px;border-radius:99px;background:rgba(255,255,255,.28);overflow:hidden;margin-top:38px}
+  .sp-barra i{display:block;height:100%;width:0;background:#fff;border-radius:99px;animation:spBarra 1.6s .2s cubic-bezier(.4,0,.2,1) forwards}
+  .sp-txt{margin:12px 0 0;font-weight:600;font-size:.95rem}
+  @keyframes spBarra{to{width:100%}}
+  @keyframes spEntra{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
+  @keyframes spSome{to{opacity:0;visibility:hidden}}
+  :root[data-mov="off"] .sp-barra i{width:100%}
+  @media (prefers-reduced-motion:reduce){.sp-barra i{width:100%}}
 </style>
 </head>
 <body>
+<div id="splash" role="status" aria-live="polite">
+  <div class="sp-logo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+  <div class="sp-nome" id="spNome">CETI Raimundo Pessoa</div>
+  <div class="sp-sub">Horários da escola</div>
+  <div class="sp-barra"><i></i></div>
+  <p class="sp-txt">Carregando...</p>
+</div>
  
 <header>
   <div>
@@ -1402,7 +1425,19 @@ setInterval(() => {
 const fixadaAoAbrir = ler("turma");
 if(!location.hash && ESCOLAS[ler("escola")] && perfilAtual() && fixadaAoAbrir && TURMAS[fixadaAoAbrir]) location.hash = encodeURIComponent(fixadaAoAbrir);
 desenhar();
+
+/* ---------- fecha a tela de carregamento ---------- */
+(function(){
+  const sp = document.getElementById("splash");
+  if(!sp) return;
+  const nome = document.getElementById("spNome");
+  if(nome && typeof ESCOLAS !== "undefined"){ nome.textContent = ESCOLAS[ler("escola")] || ESCOLAS.ceti || nome.textContent; }
+  const t0 = performance.now();
+  const minimo = document.documentElement.dataset.mov === "off" ? 500 : 1900;
+  const fechar = () => { sp.classList.add("sai"); setTimeout(() => sp.remove(), 700); };
+  const pronto = () => setTimeout(fechar, Math.max(0, minimo - (performance.now() - t0)));
+  if(document.readyState === "complete") pronto(); else addEventListener("load", pronto);
+})();
 </script>
 </body>
 </html>
-    
