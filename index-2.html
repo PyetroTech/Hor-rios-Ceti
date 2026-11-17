@@ -1440,9 +1440,8 @@ desenhar();
 })();
 </script>
 <!-- ============================================================
-  CONTADOR DE NOTAS
+  CONTADOR DE NOTAS  (versão 2: trimestres, vários prints)
   Cole este bloco INTEIRO no index.html, logo ANTES da linha  </body>
-  (é a última linha do arquivo, perto do final)
 ============================================================ -->
 <style>
   .nt{display:grid;gap:12px}
@@ -1470,7 +1469,7 @@ desenhar();
   .nt-mat header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;background:none;border:0;padding:0}
   .nt-mat header strong{font-family:var(--titulo,inherit);font-size:1.05rem}
   .nt-del{background:none;border:0;color:var(--mute,#5a5e85);font:inherit;font-size:.85rem;text-decoration:underline;cursor:pointer}
-  .nt-notas{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .nt-notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px}
   .nt-notas label{font-size:.72rem;font-weight:700;color:var(--mute,#5a5e85);margin:0 0 3px}
   .nt-notas input{padding:9px 4px;text-align:center;margin-bottom:0;font-weight:700}
   .nt-st{margin-top:10px;font-weight:600;font-size:.92rem}
@@ -1480,22 +1479,39 @@ desenhar();
   .nt-ocr .lin{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;border-top:1px solid var(--line,#d9dcef);padding-top:8px}
   .nt-ocr .lin input[type=checkbox]{width:22px;height:22px;margin:0}
   .nt-ocr .lin input[type=text]{margin-bottom:6px}
+  .nt-foto{display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center;border-top:1px solid var(--line,#d9dcef);padding-top:8px}
+  .nt-foto img{width:56px;height:56px;object-fit:cover;border-radius:10px;border:1px solid var(--line,#d9dcef)}
+  .nt-foto select{margin-bottom:0}
   .nt-erro{color:#b91c1c;font-weight:700;margin:0 0 8px}
-  @media (max-width:340px){.nt-notas{grid-template-columns:repeat(2,1fr)}}
 </style>
 
 <script>
 (function(){
   if(window.__notasMod) return;
 
-  var CHAVE = "notas:v1";
+  var CHAVE = "notas:v2";
   var CHEV = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
   var ICONE = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>';
   var COR = { ok:"#15803d", andamento:"#4338ca", atencao:"#a16207", final:"#a16207", risco:"#b91c1c", vazio:"#94a3b8" };
 
-  function padrao(){ return { regra:"24", n:4, passa:24, final:14, materias:[] }; }
+  /* ---------- regras prontas ---------- */
+  var PRESETS = {
+    tri:   { rot:"3 trimestres (média 6,0 = 18 pontos)",            tipo:"trimestre", periodos:3, porPeriodo:1, max:10, passa:18, final:10 },
+    bim:   { rot:"4 bimestres (média 6,0 = 24 pontos)",             tipo:"bimestre",  periodos:4, porPeriodo:1, max:10, passa:24, final:14 },
+    bim2:  { rot:"4 bimestres com 2 notas cada (48 pontos)",        tipo:"bimestre",  periodos:4, porPeriodo:2, max:10, passa:48, final:28 },
+    outra: { rot:"Outra regra (eu digito os números)" }
+  };
+  function padrao(){ return { preset:"tri", tipo:"trimestre", periodos:3, porPeriodo:1, max:10, passa:18, final:10, materias:[] }; }
   function carregar(){
-    try { var d = JSON.parse(localStorage.getItem(CHAVE)); if(d && Array.isArray(d.materias)) return d; } catch(e) {}
+    try {
+      var d = JSON.parse(localStorage.getItem(CHAVE));
+      if(d && Array.isArray(d.materias)) return d;
+      var v1 = JSON.parse(localStorage.getItem("notas:v1"));   // versão antiga: aproveita o que já foi digitado
+      if(v1 && Array.isArray(v1.materias)){
+        var n = padrao(); n.preset = v1.regra === "48" ? "bim2" : (v1.regra === "outra" ? "outra" : "bim");
+        n.materias = v1.materias; return n;
+      }
+    } catch(e) {}
     return padrao();
   }
   var est = carregar();
@@ -1503,54 +1519,60 @@ desenhar();
 
   var esc = function(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); };
   var fmt = function(n){ return (Math.round(n * 10) / 10).toString().replace(".", ","); };
-  var norm = function(s){ return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); };
+  var norm = function(s){ return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim(); };
+  var clamp = function(v, a, b){ return Math.max(a, Math.min(b, v)); };
+  var num = function(v){ return Number(String(v).replace(",", ".")); };
 
-  /* ---------- regras ---------- */
   function cfg(){
-    if(est.regra === "24") return { n:4, passa:24, final:14 };
-    if(est.regra === "48") return { n:8, passa:48, final:28 };
-    var n = Math.max(1, Math.min(12, Number(est.n) || 4));
-    var passa = Math.max(1, Number(est.passa) || 24);
-    var fin = Math.max(0, Math.min(passa, Number(est.final) || 0));
-    return { n:n, passa:passa, final:fin };
+    var base = (est.preset !== "outra" && PRESETS[est.preset]) ? PRESETS[est.preset] : est;
+    var P = clamp(Math.round(Number(base.periodos)) || 3, 1, 8);
+    var k = clamp(Math.round(Number(base.porPeriodo)) || 1, 1, 3);
+    var max = Math.max(1, Number(base.max) || 10);
+    var passa = Math.max(1, Number(base.passa) || 1);
+    var fin = clamp(Number(base.final) || 0, 0, passa);
+    var tipo = base.tipo === "bimestre" ? "bimestre" : (base.tipo === "semestre" ? "semestre" : "trimestre");
+    return { tipo:tipo, P:P, k:k, n:P * k, max:max, passa:passa, final:fin };
   }
+  var abrev = function(t){ return t === "bimestre" ? "bim." : (t === "semestre" ? "sem." : "trim."); };
 
   /* ---------- a conta de cada matéria ---------- */
   function analisar(m, c){
     var feitas = [];
     for(var i = 0; i < c.n; i++){
       var v = m.notas[i];
-      if(v !== undefined && v !== null && String(v).trim() !== "" && !isNaN(Number(String(v).replace(",", ".")))) feitas.push(Number(String(v).replace(",", ".")));
+      if(v !== undefined && v !== null && String(v).trim() !== "" && !isNaN(num(v))) feitas.push(num(v));
     }
     var soma = feitas.reduce(function(a, b){ return a + b; }, 0);
     var resta = c.n - feitas.length;
     var falta = Math.max(0, c.passa - soma);
     var r = { soma:soma, resta:resta, falta:falta, estado:"vazio", msg:"" };
+    var notaTxt = function(q){ return q === 1 ? "na nota" : "nas " + q + " notas"; };
+    var faltamTxt = function(q){ return q === 1 ? "falta" : "faltam"; };
     if(feitas.length === 0){ r.msg = "Preencha as notas que você já tem."; return r; }
     if(soma >= c.passa){ r.estado = "ok"; r.rot = "Passou"; r.msg = "Já tem pontos suficientes para passar direto."; return r; }
     if(resta === 0){
-      if(soma >= c.final){ r.estado = "final"; r.rot = "Prova final"; r.msg = "Não chegou em " + c.passa + " pontos. Faz a prova final (faltam " + fmt(falta) + " ponto" + (falta === 1 ? "" : "s") + ")."; }
-      else { r.estado = "risco"; r.rot = "Em risco"; r.msg = "Ficou abaixo de " + c.final + " pontos, o mínimo para fazer a prova final."; }
+      if(soma >= c.final){ r.estado = "final"; r.rot = "Prova final"; r.msg = "Não chegou em " + fmt(c.passa) + " pontos. Faz a prova final (faltam " + fmt(falta) + " ponto" + (falta === 1 ? "" : "s") + ")."; }
+      else { r.estado = "risco"; r.rot = "Em risco"; r.msg = "Ficou abaixo de " + fmt(c.final) + " pontos, o mínimo para fazer a prova final."; }
       return r;
     }
     var media = falta / resta;
-    if(media <= 10){
-      r.estado = media > 7 ? "atencao" : "andamento";
-      r.rot = media > 7 ? "Atenção" : "Em dia";
-      r.msg = "Faltam " + fmt(falta) + " ponto" + (falta === 1 ? "" : "s") + ". Precisa de média " + fmt(media) + " " + (resta === 1 ? "na nota" : "nas " + resta + " notas") + " que " + (resta === 1 ? "falta" : "faltam") + ".";
-    } else if(soma + resta * 10 >= c.final){
+    if(media <= c.max){
+      r.estado = media > c.max * 0.7 ? "atencao" : "andamento";
+      r.rot = r.estado === "atencao" ? "Atenção" : "Em dia";
+      r.msg = "Faltam " + fmt(falta) + " ponto" + (falta === 1 ? "" : "s") + ". Precisa de média " + fmt(media) + " " + notaTxt(resta) + " que " + faltamTxt(resta) + ".";
+    } else if(soma + resta * c.max >= c.final){
       var mf = Math.max(0, (c.final - soma) / resta);
       r.estado = "final"; r.rot = "Prova final";
-      r.msg = "Não dá mais para passar direto. Para ao menos fazer a prova final, precisa de média " + fmt(mf) + " " + (resta === 1 ? "na nota" : "nas " + resta + " notas") + " que " + (resta === 1 ? "falta" : "faltam") + ".";
+      r.msg = "Não dá mais para passar direto. Para ao menos fazer a prova final, precisa de média " + fmt(mf) + " " + notaTxt(resta) + " que " + faltamTxt(resta) + ".";
     } else {
       r.estado = "risco"; r.rot = "Em risco";
-      r.msg = "Mesmo com 10 em tudo que falta, não chega a " + c.final + " pontos, o mínimo para a prova final.";
+      r.msg = "Mesmo com a nota máxima em tudo que falta, não chega a " + fmt(c.final) + " pontos, o mínimo para a prova final.";
     }
     return r;
   }
 
-  /* ---------- leitura da foto (OCR): separa matéria e notas ---------- */
-  function lerLinhas(texto, n){
+  /* ---------- leitura de foto: separa matéria e notas ---------- */
+  function lerLinhas(texto, max){
     var out = [];
     String(texto).split(/\r?\n/).forEach(function(linha){
       var t = linha.replace(/[|_\[\]{}]/g, " ").replace(/\s+/g, " ").trim();
@@ -1559,21 +1581,40 @@ desenhar();
       if(idx < 3) return;
       var nome = t.slice(0, idx).replace(/[^A-Za-zÀ-ÿ \/.\-]/g, "").trim();
       if(nome.replace(/[^A-Za-zÀ-ÿ]/g, "").length < 3) return;
-      if(/^(total|m[eé]dia|frequ|faltas|situa|bimestre|disciplina|componente)/i.test(nome)) return;
+      if(/^(total|m[eé]dia|frequ|faltas|situa|bimestre|trimestre|disciplina|componente|nota)/i.test(nome)) return;
       var achados = t.slice(idx).match(/\b\d{1,2}(?:[.,]\d{1,2})?\b/g) || [];
-      var notas = achados.map(function(x){ return x.replace(",", "."); }).filter(function(x){ return Number(x) <= 10; }).slice(0, n);
+      var notas = achados.map(function(x){ return x.replace(",", "."); }).filter(function(x){ return Number(x) <= (max || 10); }).slice(0, 12);
       if(notas.length === 0) return;
       out.push({ nome: nome.replace(/\s+/g, " "), notas: notas });
     });
     return out;
   }
+  /* junta a leitura de várias imagens: cada uma diz qual período mostra ("todos" ou "1", "2", ...) */
+  function juntar(leituras, c){
+    var mapa = {}, ordem = [];
+    leituras.forEach(function(l){
+      l.linhas.forEach(function(li){
+        var key = norm(li.nome); if(!key) return;
+        var reg = mapa[key];
+        if(!reg){ reg = mapa[key] = { nome: li.nome, notas: [] }; for(var i = 0; i < c.n; i++) reg.notas.push(""); ordem.push(key); }
+        if(l.periodo === "todos"){ li.notas.slice(0, c.n).forEach(function(v, i){ reg.notas[i] = v; }); }
+        else { var p = Number(l.periodo) - 1; li.notas.slice(0, c.k).forEach(function(v, j){ if(p * c.k + j < c.n) reg.notas[p * c.k + j] = v; }); }
+      });
+    });
+    return ordem.map(function(k){ return mapa[k]; });
+  }
 
   /* ---------- telas ---------- */
-  var primeira = true;
-  var ultimo = "";
-  var ocrLista = null, ocrMsg = "", ocrErro = "";
+  var primeira = true, ultimo = "";
+  var fotos = [];                       // imagens escolhidas: { arquivo, url, periodo }
+  var ocrLista = null, ocrMsg = "", ocrErro = "", lendo = false;
 
   function app(){ return document.getElementById("app"); }
+  function opcoesPeriodo(c, sel){
+    var o = '<option value="todos"' + (sel === "todos" ? " selected" : "") + '>Todos os períodos (tabela completa)</option>';
+    for(var i = 1; i <= c.P; i++) o += '<option value="' + i + '"' + (String(sel) === String(i) ? " selected" : "") + '>Só o ' + i + 'º ' + c.tipo + '</option>';
+    return o;
+  }
 
   function render(){
     var raiz = app(); if(!raiz) return;
@@ -1581,40 +1622,44 @@ desenhar();
     raiz.dataset.anim = primeira ? "1" : "0";
     primeira = false;
     var salaOK = materiasDaSala().length > 0;
+    var outra = est.preset === "outra";
+    var presetOpts = Object.keys(PRESETS).map(function(k){ return '<option value="' + k + '"' + (est.preset === k ? " selected" : "") + '>' + PRESETS[k].rot + '</option>'; }).join("");
     raiz.innerHTML =
       '<button class="nt-voltar" id="ntVoltar">' + CHEV + ' Início</button>' +
       '<h2 class="nt-titulo">Contador de notas</h2>' +
       '<div class="nt">' +
         '<section class="nt-card" id="ntResumo"></section>' +
-        '<section class="nt-card"><h3>Regra de aprovação</h3>' +
-          '<label for="ntRegra">Quantos pontos para passar?</label>' +
-          '<select id="ntRegra">' +
-            '<option value="24"' + (est.regra === "24" ? " selected" : "") + '>24 pontos (1 nota por bimestre, 4 notas)</option>' +
-            '<option value="48"' + (est.regra === "48" ? " selected" : "") + '>48 pontos (2 notas por bimestre, 8 notas)</option>' +
-            '<option value="outra"' + (est.regra === "outra" ? " selected" : "") + '>Outra regra</option>' +
-          '</select>' +
-          '<div id="ntOutra"' + (est.regra === "outra" ? "" : " hidden") + '>' +
-            '<label for="ntN">Quantas notas por matéria?</label><input id="ntN" type="number" min="1" max="12" value="' + esc(est.n) + '">' +
-            '<label for="ntPassa">Pontos para passar direto</label><input id="ntPassa" type="number" min="1" step="0.5" value="' + esc(est.passa) + '">' +
+        '<section class="nt-card"><h3>Como a escola divide o ano?</h3>' +
+          '<p class="nt-dica"><b>Trimestre</b> é o ano dividido em 3 partes (cada uma com uns 3 meses). <b>Bimestre</b> são 4 partes (de 2 meses). No boletim da SEDUC, procure escrito "1º trimestre" ou "1º bimestre".</p>' +
+          '<label for="ntRegra">Regra de aprovação</label><select id="ntRegra">' + presetOpts + '</select>' +
+          '<div id="ntOutra"' + (outra ? "" : " hidden") + '>' +
+            '<label for="ntTipo">O ano é dividido em</label><select id="ntTipo"><option value="trimestre"' + (est.tipo === "trimestre" ? " selected" : "") + '>Trimestres</option><option value="bimestre"' + (est.tipo === "bimestre" ? " selected" : "") + '>Bimestres</option><option value="semestre"' + (est.tipo === "semestre" ? " selected" : "") + '>Semestres</option></select>' +
+            '<label for="ntP">Quantos períodos no ano?</label><input id="ntP" type="number" min="1" max="8" value="' + esc(est.periodos) + '">' +
+            '<label for="ntK">Quantas notas por período?</label><input id="ntK" type="number" min="1" max="3" value="' + esc(est.porPeriodo) + '">' +
+            '<label for="ntMax">Nota máxima de cada nota</label><input id="ntMax" type="number" min="1" step="0.5" value="' + esc(est.max) + '">' +
+            '<label for="ntPassa">Pontos para passar direto (soma do ano)</label><input id="ntPassa" type="number" min="1" step="0.5" value="' + esc(est.passa) + '">' +
             '<label for="ntFinal">Pontos mínimos para fazer a prova final</label><input id="ntFinal" type="number" min="0" step="0.5" value="' + esc(est.final) + '">' +
           '</div>' +
-          '<p class="nt-dica" id="ntRegraTxt"></p>' +
+          '<p class="nt-dica" id="ntRegraTxt" style="margin:0"></p>' +
         '</section>' +
         '<div id="ntLista" class="nt"></div>' +
         '<section class="nt-card"><h3>Adicionar matéria</h3>' +
           '<div class="nt-linha"><input id="ntNome" type="text" maxlength="40" placeholder="Ex.: Matemática" aria-label="Nome da matéria"><button class="nt-btn" id="ntAdd">Adicionar</button></div>' +
-          '<div class="nt-acoes">' +
-            (salaOK ? '<button class="nt-btn sec" id="ntSala">Usar as matérias da minha sala</button>' : '') +
-            '<label class="nt-btn sec" style="margin:0;display:inline-block">Ler foto do boletim<input id="ntFoto" type="file" accept="image/*" hidden></label>' +
-          '</div>' +
-          '<p class="nt-dica" style="margin:10px 0 0">A leitura da foto é feita aqui no seu celular, e a imagem não é enviada para ninguém. Ela pode errar, então sempre confira antes de usar.</p>' +
+          (salaOK ? '<div class="nt-acoes"><button class="nt-btn sec" id="ntSala">Usar as matérias da minha sala</button></div>' : '') +
+        '</section>' +
+        '<section class="nt-card"><h3>Ler prints do boletim</h3>' +
+          '<p class="nt-dica">Dá para mandar <b>vários prints</b>: um de cada período, ou a tabela em partes. Escolha todos de uma vez (ou adicione mais depois) e diga o que cada um mostra. Se uma tela mostra só o 2º ' + esc(c.tipo) + ', escolha "Só o 2º ' + esc(c.tipo) + '". Só mande os períodos que já têm nota.</p>' +
+          '<div id="ntFotos"></div>' +
+          '<div class="nt-acoes"><label class="nt-btn sec" style="margin:0;display:inline-block">Escolher prints<input id="ntFoto" type="file" accept="image/*" multiple hidden></label></div>' +
+          '<p class="nt-dica" style="margin:10px 0 0">A leitura é feita aqui no seu celular e as imagens não são enviadas para ninguém. Ela pode errar, então sempre confira antes de usar.</p>' +
         '</section>' +
         '<div id="ntOcr"></div>' +
-        '<p class="nt-dica">Regras baseadas nas diretrizes da SEDUC-PI: 24 pontos nos 4 bimestres passa direto, de 14 a 23 faz a prova final, abaixo de 14 reprova. Frequência abaixo de 75% reprova mesmo com nota boa. Confirme a regra da sua escola na secretaria.</p>' +
+        '<p class="nt-dica">Regras de exemplo baseadas em documentos da SEDUC-PI (média 6,0 passa; abaixo do mínimo reprova; frequência abaixo de 75% reprova mesmo com nota boa). A escola pode usar outra regra: confirme na secretaria e use "Outra regra" se precisar.</p>' +
         '<button class="nt-link" id="ntLimpar">Apagar todas as notas</button>' +
       '</div>';
     ligar();
     listar();
+    desenharFotos();
     desenharOcr();
     atualizar();
   }
@@ -1622,11 +1667,12 @@ desenhar();
   function listar(){
     var c = cfg(), el = document.getElementById("ntLista");
     if(!el) return;
-    if(est.materias.length === 0){ el.innerHTML = '<section class="nt-card"><p class="nt-dica" style="margin:0">Nenhuma matéria ainda. Adicione abaixo, use as matérias da sua sala ou leia a foto do boletim.</p></section>'; return; }
+    if(est.materias.length === 0){ el.innerHTML = '<section class="nt-card"><p class="nt-dica" style="margin:0">Nenhuma matéria ainda. Adicione abaixo, use as matérias da sua sala ou leia os prints do boletim.</p></section>'; return; }
     el.innerHTML = est.materias.map(function(m, mi){
       var campos = "";
       for(var i = 0; i < c.n; i++){
-        var rot = c.n === 4 ? (i + 1) + "º bim." : (c.n === 8 ? Math.floor(i / 2 + 1) + "º bim. n" + (i % 2 + 1) : "Nota " + (i + 1));
+        var per = Math.floor(i / c.k) + 1;
+        var rot = c.k === 1 ? per + "º " + abrev(c.tipo) : per + "º " + abrev(c.tipo) + " n" + (i % c.k + 1);
         campos += '<div><label for="nt-' + mi + '-' + i + '">' + rot + '</label><input id="nt-' + mi + '-' + i + '" data-m="' + mi + '" data-i="' + i + '" type="text" inputmode="decimal" maxlength="5" value="' + esc(m.notas[i] === undefined ? "" : m.notas[i]) + '"></div>';
       }
       return '<section class="nt-card nt-mat" id="ntM' + mi + '"><header><strong>' + esc(m.nome) + '</strong><button class="nt-del" data-del="' + mi + '">Remover</button></header>' +
@@ -1637,8 +1683,7 @@ desenhar();
         var m = est.materias[Number(inp.dataset.m)];
         var v = inp.value.replace(/[^0-9.,]/g, "");
         if(v !== inp.value) inp.value = v;
-        var num = Number(v.replace(",", "."));
-        if(v !== "" && !isNaN(num) && num > 10){ inp.value = "10"; v = "10"; }
+        if(v !== "" && !isNaN(num(v)) && num(v) > c.max){ v = String(c.max); inp.value = v; }
         m.notas[Number(inp.dataset.i)] = v;
         salvar(); atualizar();
       });
@@ -1659,19 +1704,19 @@ desenhar();
       var st = document.getElementById("ntSt" + mi), card = document.getElementById("ntM" + mi);
       if(card) card.style.setProperty("--c", COR[r.estado]);
       if(st) st.innerHTML = (r.rot ? '<span class="pill ' + r.estado + '">' + r.rot + '</span>' : '') + esc(r.msg) +
-        (r.estado !== "vazio" ? ' <span style="color:var(--mute,#5a5e85);font-weight:500">(' + fmt(r.soma) + " de " + c.passa + ' pontos)</span>' : '');
+        (r.estado !== "vazio" ? ' <span style="color:var(--mute,#5a5e85);font-weight:500">(' + fmt(r.soma) + " de " + fmt(c.passa) + ' pontos)</span>' : '');
       if(r.estado !== "vazio"){ comNota++; tot += r.soma; falta += r.falta; cont[r.estado]++; }
     });
     var res = document.getElementById("ntResumo"), txt = document.getElementById("ntRegraTxt");
     if(txt){
-      txt.textContent = "Passa direto com " + c.passa + " pontos por matéria (" + c.n + " notas de 0 a 10). De " + c.final + " a " + fmt(c.passa - 0.1) + " pontos, faz a prova final. Abaixo de " + c.final + ", reprova.";
+      txt.textContent = "Passa direto com " + fmt(c.passa) + " pontos por matéria (" + c.n + " nota" + (c.n === 1 ? "" : "s") + " de 0 a " + fmt(c.max) + "). De " + fmt(c.final) + " a " + fmt(c.passa - 0.1) + " pontos, faz a prova final. Abaixo de " + fmt(c.final) + ", reprova.";
     }
     if(!res) return;
     if(comNota === 0){
       res.innerHTML = '<h3>Ao todo</h3><p class="nt-dica" style="margin:0">Quando você preencher as notas, aqui aparece quanto já tirou e quanto falta para passar.</p>';
       return;
     }
-    var meta = comNota * c.passa, pct = Math.max(0, Math.min(100, tot / meta * 100));
+    var meta = comNota * c.passa, pct = clamp(tot / meta * 100, 0, 100);
     res.innerHTML =
       '<h3>Ao todo</h3>' +
       '<div class="nt-grande">' + fmt(tot) + ' <span style="font-size:1rem;font-weight:700;color:var(--mute,#5a5e85)">pontos tirados</span></div>' +
@@ -1703,9 +1748,26 @@ desenhar();
     nome = String(nome || "").trim().replace(/\s+/g, " ");
     if(!nome) return false;
     var existe = est.materias.find(function(m){ return norm(m.nome) === norm(nome); });
-    if(existe){ if(notas) notas.forEach(function(v, i){ existe.notas[i] = v; }); return true; }
+    if(existe){ if(notas) notas.forEach(function(v, i){ if(v !== "" && v !== undefined) existe.notas[i] = v; }); return true; }
     est.materias.push({ nome: nome.slice(0, 40), notas: notas ? notas.slice() : [] });
     return true;
+  }
+
+  /* ---------- vários prints ---------- */
+  function desenharFotos(){
+    var el = document.getElementById("ntFotos"); if(!el) return;
+    var c = cfg();
+    if(fotos.length === 0){ el.innerHTML = ""; return; }
+    el.innerHTML = fotos.map(function(f, i){
+      return '<div class="nt-foto"><img src="' + f.url + '" alt="Print ' + (i + 1) + '"><div>' +
+        '<select data-fp="' + i + '" aria-label="O que o print ' + (i + 1) + ' mostra">' + opcoesPeriodo(c, f.periodo) + '</select>' +
+        '<button class="nt-del" data-fx="' + i + '">Tirar este print</button></div></div>';
+    }).join("") +
+      '<div class="nt-acoes" style="margin-bottom:10px"><button class="nt-btn" id="ntLer"' + (lendo ? " disabled" : "") + '>Ler ' + fotos.length + ' print' + (fotos.length === 1 ? "" : "s") + '</button><button class="nt-btn sec" id="ntLimparFotos">Limpar</button></div>';
+    el.querySelectorAll("[data-fp]").forEach(function(s){ s.addEventListener("change", function(){ fotos[Number(s.dataset.fp)].periodo = s.value; }); });
+    el.querySelectorAll("[data-fx]").forEach(function(b){ b.addEventListener("click", function(){ var f = fotos.splice(Number(b.dataset.fx), 1)[0]; try { URL.revokeObjectURL(f.url); } catch(e) {} desenharFotos(); }); });
+    document.getElementById("ntLimparFotos").addEventListener("click", function(){ fotos.forEach(function(f){ try { URL.revokeObjectURL(f.url); } catch(e) {} }); fotos = []; desenharFotos(); });
+    document.getElementById("ntLer").addEventListener("click", lerFotos);
   }
 
   function desenharOcr(){
@@ -1713,26 +1775,28 @@ desenhar();
     if(ocrErro){ el.innerHTML = '<section class="nt-card"><p class="nt-erro">' + esc(ocrErro) + '</p></section>'; return; }
     if(ocrMsg){ el.innerHTML = '<section class="nt-card"><p class="nt-dica" style="margin:0">' + esc(ocrMsg) + '</p></section>'; return; }
     if(!ocrLista){ el.innerHTML = ""; return; }
-    if(ocrLista.length === 0){ el.innerHTML = '<section class="nt-card"><p class="nt-erro">Não consegui achar matérias e notas nessa foto. Tente uma foto mais reta e com boa luz, ou digite as notas.</p></section>'; return; }
+    if(ocrLista.length === 0){ el.innerHTML = '<section class="nt-card"><p class="nt-erro">Não consegui achar matérias e notas nesses prints. Tente prints mais retos e com boa luz, ou digite as notas.</p></section>'; return; }
     var c = cfg();
-    el.innerHTML = '<section class="nt-card"><h3>Conferir o que li</h3><p class="nt-dica">Corrija o que estiver errado. Só entram as linhas marcadas. Notas lidas a mais que o limite de ' + c.n + ' foram cortadas.</p><div class="nt-ocr">' +
+    el.innerHTML = '<section class="nt-card"><h3>Conferir o que li</h3><p class="nt-dica">As notas vão na ordem dos períodos (' + c.n + ' no total), separadas por ponto e vírgula. Use <b>-</b> onde ainda não tem nota. Corrija o que estiver errado; só entram as linhas marcadas.</p><div class="nt-ocr">' +
       ocrLista.map(function(l, i){
         return '<div class="lin"><input type="checkbox" data-o="' + i + '" checked aria-label="Usar esta linha"><div>' +
           '<input type="text" data-on="' + i + '" value="' + esc(l.nome) + '" aria-label="Matéria">' +
-          '<input type="text" data-ov="' + i + '" value="' + esc(l.notas.join("; ")) + '" aria-label="Notas separadas por ponto e vírgula"></div></div>';
+          '<input type="text" data-ov="' + i + '" value="' + esc(l.notas.map(function(x){ return x === "" ? "-" : x.replace(".", ","); }).join(" ; ")) + '" aria-label="Notas separadas por ponto e vírgula"></div></div>';
       }).join("") + '</div><div class="nt-acoes"><button class="nt-btn" id="ntImportar">Usar estas notas</button><button class="nt-btn sec" id="ntCancelar">Cancelar</button></div></section>';
     document.getElementById("ntCancelar").addEventListener("click", function(){ ocrLista = null; desenharOcr(); });
     document.getElementById("ntImportar").addEventListener("click", function(){
       var n = 0;
       ocrLista.forEach(function(l, i){
-        var marcado = el.querySelector('[data-o="' + i + '"]').checked;
-        if(!marcado) return;
+        if(!el.querySelector('[data-o="' + i + '"]').checked) return;
         var nome = el.querySelector('[data-on="' + i + '"]').value;
-        var notas = el.querySelector('[data-ov="' + i + '"]').value.split(/[;,\s]+(?=\d)/).map(function(x){ return x.replace(",", ".").trim(); }).filter(function(x){ return x !== "" && !isNaN(Number(x)) && Number(x) <= 10; }).slice(0, c.n);
+        var partes = el.querySelector('[data-ov="' + i + '"]').value.split(";").map(function(x){ return x.trim().replace(",", "."); });
+        var notas = [];
+        for(var j = 0; j < c.n; j++){ var x = partes[j]; notas.push(x && !isNaN(Number(x)) && Number(x) <= c.max ? x : ""); }
         if(adicionar(nome, notas)) n++;
       });
-      ocrLista = null; salvar(); listar(); desenharOcr(); atualizar();
-      if(n) { ocrMsg = n + " matéria" + (n === 1 ? "" : "s") + " adicionada" + (n === 1 ? "" : "s") + "."; desenharOcr(); setTimeout(function(){ ocrMsg = ""; desenharOcr(); }, 3000); }
+      ocrLista = null; salvar(); listar(); atualizar();
+      ocrMsg = n + " matéria" + (n === 1 ? "" : "s") + " adicionada" + (n === 1 ? "" : "s") + " ou atualizada" + (n === 1 ? "" : "s") + ".";
+      desenharOcr(); setTimeout(function(){ ocrMsg = ""; desenharOcr(); }, 3000);
     });
   }
 
@@ -1747,17 +1811,41 @@ desenhar();
     });
   }
 
+  async function lerFotos(){
+    if(lendo || fotos.length === 0) return;
+    lendo = true; ocrLista = null; ocrErro = "";
+    var c = cfg(), worker = null, leituras = [];
+    try {
+      ocrMsg = "Preparando o leitor de fotos... (na primeira vez demora um pouco)"; desenharFotos(); desenharOcr();
+      var T = await carregarTesseract();
+      var atual = 0;
+      worker = await T.createWorker("por", 1, { logger: function(m){
+        if(m && m.status === "recognizing text"){ ocrMsg = "Lendo o print " + (atual + 1) + " de " + fotos.length + "... " + Math.round((m.progress || 0) * 100) + "%"; desenharOcr(); }
+      } });
+      for(atual = 0; atual < fotos.length; atual++){
+        ocrMsg = "Lendo o print " + (atual + 1) + " de " + fotos.length + "..."; desenharOcr();
+        var r = await worker.recognize(fotos[atual].arquivo);
+        leituras.push({ periodo: fotos[atual].periodo, linhas: lerLinhas(r.data.text, c.max) });
+      }
+      ocrMsg = ""; ocrLista = juntar(leituras, c);
+    } catch(err){
+      ocrMsg = ""; ocrErro = (err && err.message) || "Não consegui ler os prints.";
+    }
+    try { if(worker) await worker.terminate(); } catch(e) {}
+    lendo = false; desenharFotos(); desenharOcr();
+  }
+
   function ligar(){
     document.getElementById("ntVoltar").addEventListener("click", function(){ location.hash = ""; });
     var regra = document.getElementById("ntRegra");
     regra.addEventListener("change", function(){
-      est.regra = regra.value; salvar();
-      document.getElementById("ntOutra").hidden = est.regra !== "outra";
-      listar(); atualizar();
+      if(regra.value === "outra" && est.preset !== "outra"){ var c0 = cfg(); est.tipo = c0.tipo; est.periodos = c0.P; est.porPeriodo = c0.k; est.max = c0.max; est.passa = c0.passa; est.final = c0.final; }
+      est.preset = regra.value; salvar(); render();
     });
-    [["ntN","n"],["ntPassa","passa"],["ntFinal","final"]].forEach(function(p){
-      var i = document.getElementById(p[0]);
+    [["ntTipo","tipo"],["ntP","periodos"],["ntK","porPeriodo"],["ntMax","max"],["ntPassa","passa"],["ntFinal","final"]].forEach(function(p){
+      var i = document.getElementById(p[0]); if(!i) return;
       i.addEventListener("input", function(){ est[p[1]] = i.value; salvar(); listar(); atualizar(); });
+      i.addEventListener("change", function(){ render(); });
     });
     var nome = document.getElementById("ntNome");
     function add(){ if(adicionar(nome.value)){ nome.value = ""; salvar(); listar(); atualizar(); nome.focus(); } }
@@ -1769,20 +1857,13 @@ desenhar();
       if(!confirm("Apagar todas as matérias e notas deste aparelho?")) return;
       est = padrao(); salvar(); render();
     });
-    document.getElementById("ntFoto").addEventListener("change", async function(e){
-      var arq = e.target.files && e.target.files[0];
+    document.getElementById("ntFoto").addEventListener("change", function(e){
+      var arqs = Array.prototype.slice.call(e.target.files || []);
       e.target.value = "";
-      if(!arq) return;
-      ocrLista = null; ocrErro = ""; ocrMsg = "Preparando o leitor de fotos... (na primeira vez demora um pouco)"; desenharOcr();
-      try {
-        var T = await carregarTesseract();
-        var r = await T.recognize(arq, "por", { logger: function(m){
-          if(m && m.status === "recognizing text"){ ocrMsg = "Lendo a foto... " + Math.round((m.progress || 0) * 100) + "%"; desenharOcr(); }
-        } });
-        ocrMsg = ""; ocrLista = lerLinhas(r.data.text, cfg().n); desenharOcr();
-      } catch(err){
-        ocrMsg = ""; ocrErro = (err && err.message) || "Não consegui ler a foto."; desenharOcr();
-      }
+      if(!arqs.length) return;
+      arqs.forEach(function(a){ fotos.push({ arquivo: a, url: URL.createObjectURL(a), periodo: "todos" }); });
+      ocrLista = null; ocrErro = ""; ocrMsg = "";
+      desenharFotos(); desenharOcr();
     });
   }
 
@@ -1810,7 +1891,7 @@ desenhar();
     } else ultimo = "";
   }
 
-  window.__notasMod = { lerLinhas: lerLinhas, analisar: analisar };
+  window.__notasMod = { lerLinhas: lerLinhas, analisar: analisar, juntar: juntar, cfg: cfg };
   injetarBotao();
   window.addEventListener("hashchange", checar);
   checar();
